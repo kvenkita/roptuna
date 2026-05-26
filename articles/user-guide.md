@@ -42,14 +42,14 @@ naturally and without extra machinery.
 Several packages address hyperparameter optimisation in R, each with
 different designs and tradeoffs.
 
-| Package | Method | Interface | Pruning | Notes |
-|----|----|----|----|----|
-| `roptuna` | TPE, Random, Grid | Define-by-run | Yes | This package |
-| `mlr3tuning` | Many (via learner) | mlr3 ecosystem | Via callbacks | Framework integration |
-| `tune` | Many (via engine) | tidymodels ecosystem | No | Framework integration |
-| `ParBayesianOptimization` | Gaussian process BO | Formula-based | No | GP-based; separate search space |
-| `rBayesianOptimization` | Gaussian process BO | Formula-based | No | Simple single-file API |
-| `irace` | Iterated racing | Config-based | No | Algorithm configuration focus |
+| Package                   | Method              | Interface            | Pruning       | Notes                           |
+|---------------------------|---------------------|----------------------|---------------|---------------------------------|
+| `roptuna`                 | TPE, Random, Grid   | Define-by-run        | Yes           | This package                    |
+| `mlr3tuning`              | Many (via learner)  | mlr3 ecosystem       | Via callbacks | Framework integration           |
+| `tune`                    | Many (via engine)   | tidymodels ecosystem | No            | Framework integration           |
+| `ParBayesianOptimization` | Gaussian process BO | Formula-based        | No            | GP-based; separate search space |
+| `rBayesianOptimization`   | Gaussian process BO | Formula-based        | No            | Simple single-file API          |
+| `irace`                   | Iterated racing     | Config-based         | No            | Algorithm configuration focus   |
 
 `roptuna` is a **standalone sampler library**: it does not require mlr3
 or tidymodels, but provides adapters for both so it can serve as the
@@ -76,13 +76,13 @@ divides past trials into two groups based on their objective value:
 - **Bad trials** (*g* group): the remaining 1 − γ fraction
 
 For each parameter, TPE fits a **kernel density estimate** over the
-parameter values that appeared in each group: $`\ell(x)`$ over good
-trials and $`g(x)`$ over bad trials. It then generates a set of
-candidate parameter values and selects the candidate where the
-**expected improvement score** $`\ell(x) / g(x)`$ is highest.
+parameter values that appeared in each group: $\ell(x)$ over good trials
+and $g(x)$ over bad trials. It then generates a set of candidate
+parameter values and selects the candidate where the **expected
+improvement score** $\ell(x)/g(x)$ is highest.
 
-The intuition is direct: a region where $`\ell(x)`$ is high and $`g(x)`$
-is low is a region where good trials concentrate and bad trials do not —
+The intuition is direct: a region where $\ell(x)$ is high and $g(x)$ is
+low is a region where good trials concentrate and bad trials do not —
 exactly where the next evaluation should land.
 
 ### Visualising the mechanism
@@ -126,8 +126,8 @@ ggplot(data.frame(x = x_obs, y = y_obs, group = group),
 ![](user-guide_files/figure-html/tpe-scatter-1.png)
 
 Given these two groups, TPE fits a kernel density estimate for each and
-evaluates the acquisition function $`\ell(x) / g(x)`$ across the domain.
-The vertical dotted line marks where this ratio peaks — the suggested
+evaluates the acquisition function $\ell(x)/g(x)$ across the domain. The
+vertical dotted line marks where this ratio peaks — the suggested
 location for the next trial.
 
 ``` r
@@ -258,12 +258,12 @@ cat("State table:\n"); print(table(sapply(study_props$trials, `[[`, "state")))
 
 ### `trial$suggest_*()` methods
 
-| Method | Description | Distribution |
-|----|----|----|
-| `trial$suggest_float(name, low, high)` | Continuous uniform | *U*(low, high) |
-| `trial$suggest_float(name, low, high, log = TRUE)` | Log-uniform | *LogU*(low, high) |
-| `trial$suggest_int(name, low, high)` | Discrete uniform | *DiscreteU*{low, …, high} |
-| `trial$suggest_categorical(name, choices)` | Nominal choice | Empirical from choices |
+| Method                                             | Description        | Distribution              |
+|----------------------------------------------------|--------------------|---------------------------|
+| `trial$suggest_float(name, low, high)`             | Continuous uniform | *U*(low, high)            |
+| `trial$suggest_float(name, low, high, log = TRUE)` | Log-uniform        | *LogU*(low, high)         |
+| `trial$suggest_int(name, low, high)`               | Discrete uniform   | *DiscreteU*{low, …, high} |
+| `trial$suggest_categorical(name, choices)`         | Nominal choice     | Empirical from choices    |
 
 **Parameters are idempotent within a trial.** Calling
 `suggest_float("lr", 0, 1)` twice in the same trial always returns the
@@ -301,11 +301,11 @@ cat("Best depth: ", study_demo$best_params$depth, "\n")
 
 ### Available samplers
 
-| Sampler | Function | When to use |
-|----|----|----|
-| **TPE** | `tpe_sampler(seed, n_startup_trials, gamma, n_ei_candidates)` | General purpose; default choice |
-| **Random** | `random_sampler(seed)` | Baselines; parallel embarrassingly-random search |
-| **Grid** | `grid_sampler(search_space)` | Exhaustive small grids; all combinations required |
+| Sampler    | Function                                                      | When to use                                       |
+|------------|---------------------------------------------------------------|---------------------------------------------------|
+| **TPE**    | `tpe_sampler(seed, n_startup_trials, gamma, n_ei_candidates)` | General purpose; default choice                   |
+| **Random** | `random_sampler(seed)`                                        | Baselines; parallel embarrassingly-random search  |
+| **Grid**   | `grid_sampler(search_space)`                                  | Exhaustive small grids; all combinations required |
 
 ### TPE vs Random: convergence comparison
 
@@ -476,10 +476,10 @@ ggplot(trace_df, aes(x = epoch, y = loss,
 
 ### MedianPruner vs SuccessiveHalvingPruner
 
-| Pruner | Function | Mechanism |
-|----|----|----|
-| **Median** | `median_pruner(n_startup_trials, n_warmup_steps, interval_steps)` | Prune if loss \> median of completed trials at the same step |
-| **Successive Halving (ASHA)** | `successive_halving_pruner(min_resource, reduction_factor)` | Promote only the top 1/η fraction to the next resource rung |
+| Pruner                        | Function                                                          | Mechanism                                                    |
+|-------------------------------|-------------------------------------------------------------------|--------------------------------------------------------------|
+| **Median**                    | `median_pruner(n_startup_trials, n_warmup_steps, interval_steps)` | Prune if loss \> median of completed trials at the same step |
+| **Successive Halving (ASHA)** | `successive_halving_pruner(min_resource, reduction_factor)`       | Promote only the top 1/η fraction to the next resource rung  |
 
 The MedianPruner is the safer default: it requires relatively few
 completed trials before activating and does not depend on a

@@ -24,11 +24,14 @@ tune_optuna(
 
 - object:
 
-  A `workflow` object with `tune::tune()` placeholders.
+  A `workflow` object with
+  [`tune::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
+  placeholders.
 
 - resamples:
 
-  An `rset` object (e.g. from `rsample::vfold_cv()`).
+  An `rset` object (e.g. from
+  [`rsample::vfold_cv()`](https://rsample.tidymodels.org/reference/vfold_cv.html)).
 
 - suggest_fn:
 
@@ -63,11 +66,15 @@ tune_optuna(
 
 - metrics:
 
-  A `yardstick::metric_set`. Defaults to workflow's default metric.
+  A
+  [`yardstick::metric_set`](https://yardstick.tidymodels.org/reference/metric_set.html).
+  Defaults to workflow's default metric.
 
 - control:
 
-  A `tune::control_resamples()` object.
+  A
+  [`tune::control_resamples()`](https://tune.tidymodels.org/reference/control_grid.html)
+  object.
 
 ## Value
 

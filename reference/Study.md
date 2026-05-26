@@ -41,5 +41,5 @@ Run the objective function for n_trials iterations.
 study <- create_study(direction = "minimize")
 study$optimize(function(trial) trial$suggest_float("x", -5, 5)^2, n_trials = 5)
 study$best_value
-#> [1] 0.1785757
+#> [1] 1.015276
 ```

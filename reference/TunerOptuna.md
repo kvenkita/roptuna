@@ -7,7 +7,9 @@ mlr3tuning adapter for roptuna
 ## Details
 
 A class that uses roptuna to search hyperparameters inside an mlr3tuning
-instance. Use with `mlr3tuning::ti()` and `tuner$optimize(instance)`.
+instance. Use with
+[`mlr3tuning::ti()`](https://mlr3tuning.mlr-org.com/reference/ti.html)
+and `tuner$optimize(instance)`.
 
 ## Methods
 
