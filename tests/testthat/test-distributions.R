@@ -22,6 +22,30 @@ test_that("int_distribution stores bounds", {
   expect_s3_class(d, "roptuna_int_distribution")
 })
 
+test_that("int_distribution allows low == high (degenerate single-value range)", {
+  d <- int_distribution(5L, 5L)
+  expect_equal(d$low, 5L)
+  expect_equal(d$high, 5L)
+  expect_equal(dist_sample_random(d), 5L)
+})
+
+test_that("dist_to_list omits NULL step; dist_from_list tolerates missing step", {
+  d <- float_distribution(-1, 1)
+  lst <- dist_to_list(d)
+  expect_null(lst$step)           # NULL step should not be serialized
+  d2 <- dist_from_list(lst)
+  expect_null(d2$step)            # round-trip preserves NULL
+})
+
+test_that("dist_from_list handles JSON-roundtripped NULL step (empty list)", {
+  # jsonlite serialises NULL as {} which comes back as list(); must not crash
+  lst <- list(name = "FloatDistribution", low = -5, high = 5,
+              log = FALSE, step = list())   # simulates {} from JSON
+  d <- dist_from_list(lst)
+  expect_null(d$step)
+  expect_true(is.numeric(dist_sample_random(d)))  # no crash
+})
+
 test_that("categorical_distribution stores choices", {
   d <- categorical_distribution(c("a", "b", "c"))
   expect_equal(d$choices, c("a", "b", "c"))

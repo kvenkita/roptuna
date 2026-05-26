@@ -51,3 +51,25 @@ test_that("optimize with direction=maximize picks largest value", {
   vals <- sapply(study$trials, `[[`, "value")
   expect_equal(study$best_value, max(vals))
 })
+
+test_that("best_trial returns NULL (not crash) when all values are NaN", {
+  study <- create_study(direction = "minimize")
+  study$optimize(function(trial) {
+    trial$suggest_float("x", -5, 5)
+    NaN
+  }, n_trials = 4)
+  expect_null(study$best_trial)
+  expect_equal(study$best_value, Inf)
+})
+
+test_that("best_trial skips NaN values and finds finite minimum", {
+  i <- 0L
+  study <- create_study(direction = "minimize")
+  study$optimize(function(trial) {
+    x <- trial$suggest_float("x", -5, 5)
+    i <<- i + 1L
+    if (i %% 2 == 0) NaN else x^2
+  }, n_trials = 6)
+  expect_false(is.nan(study$best_trial$value))
+  expect_equal(study$best_value, study$best_trial$value)
+})

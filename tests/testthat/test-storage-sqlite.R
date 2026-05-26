@@ -40,3 +40,18 @@ test_that("create_study with sqlite_storage works end-to-end", {
     expect_true(study$best_value < 4.0)
   })
 })
+
+test_that("SqliteStorage + TPE: NULL step survives JSON roundtrip (no crash)", {
+  # Regression: jsonlite serialises NULL as {}, which fromJSON returns as list().
+  # dist_sample_random then calls seq(..., by=list()) -> "by must be of length 1".
+  withr::with_tempfile("db", fileext = ".sqlite", code = {
+    study <- create_study("minimize",
+                          sampler = tpe_sampler(seed = 1L, n_startup_trials = 3L),
+                          storage = SqliteStorage$new(db))
+    study$optimize(function(trial) {
+      trial$suggest_float("x", -5, 5)^2
+    }, n_trials = 15L)
+    expect_equal(length(study$trials), 15L)
+    expect_true(all(sapply(study$trials, `[[`, "state") == "complete"))
+  })
+})

@@ -97,6 +97,10 @@ TpeSampler <- R6::R6Class("TpeSampler",
     c(diffs[1], pmax(diffs[-length(diffs)], diffs[-1]), diffs[length(diffs)])
   }
   obs_sigmas <- pmin(obs_sigmas, prior_sigma)
+  # Minimum sigma prevents over-concentration and NaN from zero-variance kernels.
+  # floor = prior_sigma / (n+2) matches Scott's rule scaling and ensures the
+  # Parzen estimate can still explore the full search space as trials accumulate.
+  obs_sigmas <- pmax(obs_sigmas, prior_sigma / (n + 2))
   w <- rep(1/(n+1), n+1)
   list(means   = c(sorted, (low+high)/2),
        sigmas  = c(obs_sigmas, prior_sigma),
@@ -112,10 +116,12 @@ TpeSampler <- R6::R6Class("TpeSampler",
 
 .eval_parzen <- function(est, x) {
   xt <- if (est$log) log(x) else x
-  mat <- outer(est$means, xt, function(m, xi)
-    log(est$weights[match(m, est$means)]) +
-    stats::dnorm(xi, m, est$sigmas[match(m, est$means)], log = TRUE))
-  apply(mat, 2, function(col) { mx <- max(col); mx + log(sum(exp(col - mx))) })
+  log_w <- log(est$weights)
+  # Build matrix by index to avoid match() returning wrong index for duplicate means.
+  log_p <- matrix(nrow = length(est$means), ncol = length(xt))
+  for (i in seq_along(est$means))
+    log_p[i, ] <- log_w[i] + stats::dnorm(xt, est$means[i], est$sigmas[i], log = TRUE)
+  apply(log_p, 2, function(col) { mx <- max(col); mx + log(sum(exp(col - mx))) })
 }
 
 .cat_weights <- function(obs, choices) {

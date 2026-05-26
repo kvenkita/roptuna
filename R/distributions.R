@@ -26,7 +26,7 @@ float_distribution <- function(low, high, log = FALSE, step = NULL) {
 #' @export
 int_distribution <- function(low, high) {
   low <- as.integer(low); high <- as.integer(high)
-  if (low >= high) stop("low must be less than high")
+  if (low > high) stop("low must be less than or equal to high")
   structure(list(low = low, high = high), class = "roptuna_int_distribution")
 }
 
@@ -43,8 +43,9 @@ categorical_distribution <- function(choices) {
 
 dist_to_list <- function(d) {
   if (inherits(d, "roptuna_float_distribution")) {
-    list(name = "FloatDistribution", low = d$low, high = d$high,
-         log = d$log, step = d$step)
+    dl <- list(name = "FloatDistribution", low = d$low, high = d$high, log = d$log)
+    if (!is.null(d$step)) dl$step <- d$step  # omit NULL; jsonlite serialises NULL as "{}"
+    dl
   } else if (inherits(d, "roptuna_int_distribution")) {
     list(name = "IntDistribution", low = d$low, high = d$high)
   } else {
@@ -55,7 +56,8 @@ dist_to_list <- function(d) {
 dist_from_list <- function(x) {
   switch(x$name,
     FloatDistribution       = float_distribution(x$low, x$high,
-                                                 log = isTRUE(x$log), step = x$step),
+                                log = isTRUE(x$log),
+                                step = if (length(x$step) == 1) x$step else NULL),
     IntDistribution         = int_distribution(x$low, x$high),
     CategoricalDistribution = categorical_distribution(x$choices)
   )
@@ -72,7 +74,8 @@ dist_sample_random <- function(d) {
       stats::runif(1, d$low, d$high)
     }
   } else if (inherits(d, "roptuna_int_distribution")) {
-    sample(d$low:d$high, 1)
+    if (d$low == d$high) return(d$low)
+    sample.int(d$high - d$low + 1L, 1L) + d$low - 1L
   } else {
     sample(d$choices, 1)
   }

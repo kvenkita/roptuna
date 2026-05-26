@@ -129,11 +129,9 @@ Study <- R6::R6Class("Study",
       )
       if (length(complete) == 0) return(NULL)
       vals <- sapply(complete, `[[`, "value")
-      if (self$direction == "minimize") {
-        complete[[which.min(vals)]]
-      } else {
-        complete[[which.max(vals)]]
-      }
+      idx <- if (self$direction == "minimize") which.min(vals) else which.max(vals)
+      if (length(idx) == 0) return(NULL)
+      complete[[idx]]
     },
     best_value = function() {
       bt <- self$best_trial
