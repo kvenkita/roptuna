@@ -1,0 +1,108 @@
+# roptuna — Hyperparameter Optimization for R
+
+`roptuna` is an R implementation of the [Optuna](https://optuna.org/)
+hyperparameter optimization framework (Akiba et al. 2019). It provides
+define-by-run search spaces, Tree-structured Parzen Estimator (TPE)
+sampling, trial pruning, and persistent study storage via SQLite.
+
+## Installation
+
+``` r
+# install.packages("remotes")
+remotes::install_github("kvenkita/roptuna")
+```
+
+## Quick start
+
+``` r
+library(roptuna)
+
+objective <- function(trial) {
+  x <- trial$suggest_float("x", -10, 10)
+  y <- trial$suggest_int("y", 1L, 5L)
+  (x - 2)^2 + y
+}
+
+study <- create_study(direction = "minimize", sampler = tpe_sampler())
+study$optimize(objective, n_trials = 50)
+
+study$best_value
+study$best_params
+autoplot(study, type = "history")
+```
+
+## Citation
+
+Akiba, T., Sano, S., Yanase, T., Ohta, T., & Koyama, M. (2019). Optuna:
+A Next-generation Hyperparameter Optimization Framework. *KDD 2019*.
+<https://doi.org/10.1145/3292500.3330701>
+
+# Package index
+
+## Study
+
+- [`create_study()`](https://kvenkita.github.io/roptuna/reference/create_study.md)
+  : Create a new optimization study
+- [`Study`](https://kvenkita.github.io/roptuna/reference/Study.md) :
+  Study R6 class for hyperparameter optimization
+- [`Trial`](https://kvenkita.github.io/roptuna/reference/Trial.md) :
+  Trial object passed to the objective function
+
+## Samplers
+
+- [`random_sampler()`](https://kvenkita.github.io/roptuna/reference/random_sampler.md)
+  : Create a random sampler
+- [`grid_sampler()`](https://kvenkita.github.io/roptuna/reference/grid_sampler.md)
+  : Create a grid sampler
+- [`tpe_sampler()`](https://kvenkita.github.io/roptuna/reference/tpe_sampler.md)
+  : Create a TPE sampler
+
+## Pruners
+
+- [`median_pruner()`](https://kvenkita.github.io/roptuna/reference/median_pruner.md)
+  : Create a median pruner
+- [`successive_halving_pruner()`](https://kvenkita.github.io/roptuna/reference/successive_halving_pruner.md)
+  : Create a successive halving (ASHA) pruner
+- [`stop_prune()`](https://kvenkita.github.io/roptuna/reference/stop_prune.md)
+  : Signal that the current trial should be pruned
+
+## Storage
+
+- [`sqlite_storage()`](https://kvenkita.github.io/roptuna/reference/sqlite_storage.md)
+  : SQLite storage backend (schema matches Python Optuna)
+- [`SqliteStorage`](https://kvenkita.github.io/roptuna/reference/SqliteStorage.md)
+  : SQLite storage R6 class (schema matches Python Optuna)
+- [`InMemoryStorage`](https://kvenkita.github.io/roptuna/reference/InMemoryStorage.md)
+  : In-memory storage backend for roptuna studies
+
+## Distributions
+
+- [`float_distribution()`](https://kvenkita.github.io/roptuna/reference/float_distribution.md)
+  : Create a float (continuous) distribution
+- [`int_distribution()`](https://kvenkita.github.io/roptuna/reference/int_distribution.md)
+  : Create an integer distribution
+- [`categorical_distribution()`](https://kvenkita.github.io/roptuna/reference/categorical_distribution.md)
+  : Create a categorical distribution
+
+## Adapters
+
+- [`tune_optuna()`](https://kvenkita.github.io/roptuna/reference/tune_optuna.md)
+  : Run a tidymodels workflow using roptuna for hyperparameter search
+- [`TunerOptuna`](https://kvenkita.github.io/roptuna/reference/TunerOptuna.md)
+  : mlr3tuning adapter for roptuna
+
+## Visualization
+
+- [`autoplot(`*`<Study>`*`)`](https://kvenkita.github.io/roptuna/reference/autoplot.Study.md)
+  : Plot an roptuna study
+
+# Articles
+
+### All vignettes
+
+- [Comparison with Python
+  Optuna](https://kvenkita.github.io/roptuna/articles/comparison-with-python.md):
+- [Getting Started with
+  roptuna](https://kvenkita.github.io/roptuna/articles/getting-started.md):
+- [roptuna: A Practitioner's Guide to Hyperparameter
+  Optimization](https://kvenkita.github.io/roptuna/articles/user-guide.md):
