@@ -23,7 +23,7 @@ navbar:
 
 reference:
   - title: "Study"
-    contents: [create_study, Study]
+    contents: [create_study, Study, Trial]
   - title: "Samplers"
     contents: [random_sampler, grid_sampler, tpe_sampler]
   - title: "Pruners"
