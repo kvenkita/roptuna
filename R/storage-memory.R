@@ -88,6 +88,14 @@ InMemoryStorage <- R6::R6Class("InMemoryStorage",
         trials <- Filter(function(t) t$state %in% states, trials)
       }
       unname(trials)
+    },
+
+    find_study = function(study_name) {
+      for (sid_key in names(private$.studies)) {
+        if (private$.studies[[sid_key]]$study_name == study_name)
+          return(private$.studies[[sid_key]]$study_id)
+      }
+      NULL
     }
   ),
   private = list(

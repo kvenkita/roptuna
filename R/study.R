@@ -20,7 +20,12 @@ create_study <- function(direction = "minimize", sampler = NULL,
   if (is.null(sampler))    sampler    <- random_sampler()
   if (is.null(study_name)) study_name <- paste0("study-", format(Sys.time(), "%Y%m%d%H%M%S"))
 
-  study_id <- storage$create_study(study_name, direction)
+  if (load_if_exists) {
+    existing <- storage$find_study(study_name)
+    study_id <- if (!is.null(existing)) existing else storage$create_study(study_name, direction)
+  } else {
+    study_id <- storage$create_study(study_name, direction)
+  }
 
   Study$new(
     study_id   = study_id,

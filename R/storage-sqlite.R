@@ -95,6 +95,14 @@ SqliteStorage <- R6::R6Class("SqliteStorage",
           c(list(study_id), as.list(states)))
       }
       lapply(rows$trial_id, function(tid) private$.load_trial(con, study_id, tid))
+    },
+
+    find_study = function(study_name) {
+      con <- private$.con(); on.exit(DBI::dbDisconnect(con))
+      res <- DBI::dbGetQuery(con,
+        "SELECT study_id FROM studies WHERE study_name = ?", list(study_name))
+      if (nrow(res) == 0) return(NULL)
+      as.integer(res[[1, 1]])
     }
   ),
   private = list(

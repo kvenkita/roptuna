@@ -41,6 +41,24 @@ test_that("create_study with sqlite_storage works end-to-end", {
   })
 })
 
+test_that("load_if_exists resumes existing SQLite study", {
+  withr::with_tempfile("db", fileext = ".sqlite", code = {
+    s1 <- create_study("minimize",
+                       sampler    = random_sampler(seed = 1),
+                       storage    = sqlite_storage(db),
+                       study_name = "resumable")
+    s1$optimize(function(trial) trial$suggest_float("x", -1, 1)^2, n_trials = 5)
+    s2 <- create_study("minimize",
+                       sampler        = random_sampler(seed = 2),
+                       storage        = sqlite_storage(db),
+                       study_name     = "resumable",
+                       load_if_exists = TRUE)
+    s2$optimize(function(trial) trial$suggest_float("x", -1, 1)^2, n_trials = 5)
+    expect_equal(length(s2$trials), 10L)
+    expect_equal(s1$study_id, s2$study_id)
+  })
+})
+
 test_that("SqliteStorage + TPE: NULL step survives JSON roundtrip (no crash)", {
   # Regression: jsonlite serialises NULL as {}, which fromJSON returns as list().
   # dist_sample_random then calls seq(..., by=list()) -> "by must be of length 1".
