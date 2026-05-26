@@ -2,6 +2,10 @@
 #' @param min_resource Minimum steps before any pruning.
 #' @param reduction_factor Halving factor eta (default 3).
 #' @param min_early_stopping_rate Rung offset s_min.
+#' @return A `SuccessiveHalvingPruner` R6 object.
+#' @examples
+#' pruner <- successive_halving_pruner(min_resource = 3L, reduction_factor = 3L)
+#' study <- create_study(pruner = pruner)
 #' @export
 successive_halving_pruner <- function(min_resource = 1L, reduction_factor = 3L,
                                       min_early_stopping_rate = 0L) {

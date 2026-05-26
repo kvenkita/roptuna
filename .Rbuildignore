@@ -3,3 +3,7 @@
 ^pkgdown$
 ^CLAUDE\.md$
 ^DECISIONS\.md$
+^README\.Rmd$
+^README\.html$
+^LICENSE\.md$
+^_pkgdown\.yml$

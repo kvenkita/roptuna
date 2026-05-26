@@ -3,6 +3,10 @@
 #' @param gamma Fraction of trials treated as "good" (default 0.25).
 #' @param n_ei_candidates Candidates sampled per parameter.
 #' @param seed Random seed.
+#' @return A `TpeSampler` R6 object.
+#' @examples
+#' sampler <- tpe_sampler(n_startup_trials = 5L, seed = 42L)
+#' study <- create_study(sampler = sampler)
 #' @export
 tpe_sampler <- function(n_startup_trials = 10L, gamma = 0.25,
                         n_ei_candidates = 24L, seed = NULL) {

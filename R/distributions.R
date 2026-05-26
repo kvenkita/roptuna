@@ -3,6 +3,10 @@
 #' @param high Upper bound (inclusive).
 #' @param log If TRUE, sample in log space. Both bounds must be positive.
 #' @param step If not NULL, round samples to this step size.
+#' @return An S3 object of class `roptuna_float_distribution`.
+#' @examples
+#' float_distribution(0, 1)
+#' float_distribution(1e-5, 1e-1, log = TRUE)
 #' @export
 float_distribution <- function(low, high, log = FALSE, step = NULL) {
   if (low >= high) stop("low must be less than high")
@@ -16,6 +20,9 @@ float_distribution <- function(low, high, log = FALSE, step = NULL) {
 #' Create an integer distribution
 #' @param low Lower bound (inclusive).
 #' @param high Upper bound (inclusive).
+#' @return An S3 object of class `roptuna_int_distribution`.
+#' @examples
+#' int_distribution(1L, 10L)
 #' @export
 int_distribution <- function(low, high) {
   low <- as.integer(low); high <- as.integer(high)
@@ -25,6 +32,9 @@ int_distribution <- function(low, high) {
 
 #' Create a categorical distribution
 #' @param choices Character or numeric vector of choices.
+#' @return An S3 object of class `roptuna_categorical_distribution`.
+#' @examples
+#' categorical_distribution(c("adam", "sgd", "rmsprop"))
 #' @export
 categorical_distribution <- function(choices) {
   if (length(choices) < 1) stop("categorical_distribution requires at least one choice")

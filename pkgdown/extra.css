@@ -1,0 +1,70 @@
+/* ============================================================
+   rsdv pkgdown site — extra styles (layered over flatly BS5)
+   Brand accent: #2171b5
+   ============================================================ */
+
+/* --- Code blocks ------------------------------------------ */
+pre {
+  border-left: 4px solid #2171b5;
+  border-radius: 5px;
+  background-color: #f6f9fc;
+}
+
+/* --- Tables ----------------------------------------------- */
+.table thead th {
+  background-color: #2171b5;
+  color: #ffffff;
+  border-color: #2171b5;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.table tbody tr:nth-child(even) td {
+  background-color: #f6f9fc;
+}
+
+.table tbody td {
+  border-color: #e4eef6;
+  vertical-align: top;
+}
+
+/* --- Page title ------------------------------------------- */
+.page-header h1 {
+  border-bottom: 3px solid #2171b5;
+  padding-bottom: 0.4rem;
+}
+
+/* --- Sidebar nav ------------------------------------------ */
+.sidebar .list-unstyled li a.active {
+  color: #2171b5;
+  font-weight: 600;
+}
+
+/* --- Reference index cards -------------------------------- */
+.ref-index td:first-child {
+  font-weight: 600;
+  color: #2171b5;
+}
+
+/* --- Navbar ----------------------------------------------- */
+.navbar-brand {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* --- Article TOC ------------------------------------------ */
+.toc .nav-link {
+  color: #4a6785;
+  font-size: 0.88em;
+}
+
+.toc .nav-link:hover,
+.toc .nav-link.active {
+  color: #2171b5;
+}
+
+/* --- Footer ----------------------------------------------- */
+.footer {
+  border-top: 2px solid #dce6f0;
+  margin-top: 3rem;
+}

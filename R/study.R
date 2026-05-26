@@ -7,6 +7,10 @@
 #' @param study_name Character name. Auto-generated if NULL.
 #' @param load_if_exists For SQLite: if TRUE, load existing study with this name.
 #' @return A `Study` R6 object.
+#' @examples
+#' study <- create_study(direction = "minimize", sampler = tpe_sampler(seed = 1L))
+#' study$optimize(function(trial) trial$suggest_float("x", -5, 5)^2, n_trials = 5)
+#' study$best_value
 #' @export
 create_study <- function(direction = "minimize", sampler = NULL,
                          pruner = NULL, storage = NULL,
@@ -28,6 +32,13 @@ create_study <- function(direction = "minimize", sampler = NULL,
   )
 }
 
+#' Study R6 class for hyperparameter optimization
+#'
+#' Manages the optimization loop. Create via [create_study()].
+#' @examples
+#' study <- create_study(direction = "minimize")
+#' study$optimize(function(trial) trial$suggest_float("x", -5, 5)^2, n_trials = 5)
+#' study$best_value
 #' @export
 Study <- R6::R6Class("Study",
   cloneable = FALSE,

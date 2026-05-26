@@ -1,0 +1,36 @@
+url: https://kvenkita.github.io/roptuna
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  bslib:
+    primary: "#2171b5"
+    link-color: "#2171b5"
+    code-color: "#c0392b"
+    code-bg: "#f6f9fc"
+
+navbar:
+  left:
+    - text: "Reference"
+      href: reference/index.html
+    - text: "Articles"
+      menu:
+        - text: "Getting Started"
+          href: articles/getting-started.html
+        - text: "Comparison with Python Optuna"
+          href: articles/comparison-with-python.html
+
+reference:
+  - title: "Study"
+    contents: [create_study, Study]
+  - title: "Samplers"
+    contents: [random_sampler, grid_sampler, tpe_sampler]
+  - title: "Pruners"
+    contents: [median_pruner, successive_halving_pruner, stop_prune]
+  - title: "Storage"
+    contents: [sqlite_storage, SqliteStorage, InMemoryStorage]
+  - title: "Distributions"
+    contents: [float_distribution, int_distribution, categorical_distribution]
+  - title: "Adapters"
+    contents: [tune_optuna, TunerOptuna]
+  - title: "Visualization"
+    contents: [autoplot.Study]

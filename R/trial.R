@@ -3,6 +3,13 @@
 #' Created by the Study for each call to the objective. Do not instantiate
 #' directly — always received as the argument to your objective function.
 #'
+#' @examples
+#' # Trial objects are created automatically by study$optimize()
+#' study <- create_study(direction = "minimize")
+#' study$optimize(function(trial) {
+#'   x <- trial$suggest_float("x", -5, 5)
+#'   x^2
+#' }, n_trials = 3)
 #' @export
 Trial <- R6::R6Class("Trial",
   public = list(

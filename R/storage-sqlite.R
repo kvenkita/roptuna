@@ -1,8 +1,21 @@
 #' SQLite storage backend (schema matches Python Optuna)
 #' @param path Path to SQLite file.
+#' @return A `SqliteStorage` R6 object.
+#' @examples
+#' \dontrun{
+#' storage <- sqlite_storage(tempfile(fileext = ".sqlite"))
+#' study <- create_study(storage = storage, study_name = "my_study")
+#' }
 #' @export
 sqlite_storage <- function(path) SqliteStorage$new(path)
 
+#' SQLite storage R6 class (schema matches Python Optuna)
+#'
+#' See [sqlite_storage()] for the recommended constructor.
+#' @examples
+#' \dontrun{
+#' storage <- SqliteStorage$new(tempfile(fileext = ".sqlite"))
+#' }
 #' @export
 SqliteStorage <- R6::R6Class("SqliteStorage",
   public = list(

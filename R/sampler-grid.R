@@ -1,5 +1,9 @@
 #' Create a grid sampler
 #' @param search_space Named list of choice vectors: `list(lr = c(0.01, 0.1), n = c(32L, 64L))`.
+#' @return A `GridSampler` R6 object.
+#' @examples
+#' sampler <- grid_sampler(list(lr = c(0.01, 0.1), depth = c(3L, 5L)))
+#' study <- create_study(sampler = sampler)
 #' @export
 grid_sampler <- function(search_space) GridSampler$new(search_space)
 

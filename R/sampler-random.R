@@ -1,5 +1,9 @@
 #' Create a random sampler
 #' @param seed Optional random seed.
+#' @return A `RandomSampler` R6 object.
+#' @examples
+#' sampler <- random_sampler(seed = 42L)
+#' study <- create_study(sampler = sampler)
 #' @export
 random_sampler <- function(seed = NULL) {
   if (!is.null(seed)) set.seed(seed)

@@ -15,6 +15,20 @@
 #' @param control A `tune::control_resamples()` object.
 #' @return An roptuna `Study` object. Use `study$best_params` to retrieve
 #'   the best hyperparameters.
+#' @examples
+#' \dontrun{
+#' # Requires tune, parsnip, rsample, workflows, yardstick packages
+#' library(tune); library(parsnip); library(rsample); library(workflows)
+#' wf <- workflow() |>
+#'   add_model(decision_tree(cost_complexity = tune()) |> set_engine("rpart") |>
+#'               set_mode("classification")) |>
+#'   add_formula(Species ~ .)
+#' folds <- vfold_cv(iris, v = 3)
+#' study <- tune_optuna(wf, folds,
+#'   suggest_fn = function(trial) list(cost_complexity = trial$suggest_float("cp", 0, 0.1)),
+#'   n_trials = 5, direction = "minimize")
+#' study$best_params
+#' }
 #' @export
 tune_optuna <- function(object, resamples, suggest_fn,
                         n_trials = 20,

@@ -3,6 +3,12 @@
 #' A class that uses roptuna to search hyperparameters inside an mlr3tuning
 #' instance. Use with `mlr3tuning::ti()` and `tuner$optimize(instance)`.
 #'
+#' @examples
+#' \dontrun{
+#' # Requires mlr3, mlr3tuning, paradox packages
+#' library(mlr3); library(mlr3tuning); library(paradox)
+#' tuner <- TunerOptuna$new(sampler = tpe_sampler(seed = 1L))
+#' }
 #' @export
 TunerOptuna <- R6::R6Class("TunerOptuna",
   public = list(

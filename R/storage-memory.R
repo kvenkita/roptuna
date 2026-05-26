@@ -1,4 +1,6 @@
 #' In-memory storage backend for roptuna studies
+#' @examples
+#' storage <- InMemoryStorage$new()
 #' @export
 InMemoryStorage <- R6::R6Class("InMemoryStorage",
   public = list(

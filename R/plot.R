@@ -7,6 +7,14 @@ NULL
 #' @param type One of `"history"`, `"parallel_coordinate"`, `"param_importance"`.
 #' @param ... Unused.
 #' @return A `ggplot2` object.
+#' @examples
+#' study <- create_study(direction = "minimize", sampler = tpe_sampler(seed = 1L))
+#' study$optimize(function(trial) {
+#'   x <- trial$suggest_float("x", -5, 5)
+#'   y <- trial$suggest_int("y", 1L, 3L)
+#'   x^2 + y
+#' }, n_trials = 10)
+#' ggplot2::autoplot(study, type = "history")
 #' @export
 autoplot.Study <- function(object, type = "history", ...) {
   type <- match.arg(type, c("history", "parallel_coordinate", "param_importance"))
