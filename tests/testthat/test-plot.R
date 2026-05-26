@@ -29,5 +29,5 @@ test_that("autoplot param_importance returns a ggplot", {
 
 test_that("autoplot errors on unknown type", {
   study <- make_study_30()
-  expect_error(autoplot(study, type = "banana"), "type")
+  expect_error(autoplot(study, type = "banana"), "should be one of")
 })

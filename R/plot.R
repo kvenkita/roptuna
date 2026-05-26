@@ -9,13 +9,7 @@ NULL
 #' @return A `ggplot2` object.
 #' @export
 autoplot.Study <- function(object, type = "history", ...) {
-  valid_types <- c("history", "parallel_coordinate", "param_importance")
-  if (!type %in% valid_types) {
-    stop(sprintf(
-      "Unknown type %s. Must be one of: %s",
-      sQuote(type), paste(sQuote(valid_types), collapse = ", ")
-    ))
-  }
+  type <- match.arg(type, c("history", "parallel_coordinate", "param_importance"))
   switch(type,
     history             = .plot_history(object),
     parallel_coordinate = .plot_parallel(object),
