@@ -65,3 +65,23 @@ test_that("InMemoryStorage stores intermediate values", {
   expect_equal(snap$intermediate_values[["1"]], 0.8)
   expect_equal(snap$intermediate_values[["2"]], 0.6)
 })
+
+test_that("get_all_trials does not cross study boundaries", {
+  s <- InMemoryStorage$new()
+  sid1 <- s$create_study("s1", "minimize")
+  sid2 <- s$create_study("s2", "minimize")
+  s$create_trial(sid1)
+  s$create_trial(sid1)
+  s$create_trial(sid2)
+  expect_equal(length(s$get_all_trials(sid1)), 2)
+  expect_equal(length(s$get_all_trials(sid2)), 1)
+})
+
+test_that("InMemoryStorage stores user attributes", {
+  s <- InMemoryStorage$new()
+  sid <- s$create_study("s", "minimize")
+  tid <- s$create_trial(sid)
+  s$set_trial_user_attr(sid, tid, "note", "hello")
+  snap <- s$get_trial(sid, tid)
+  expect_equal(snap$user_attrs$note, "hello")
+})

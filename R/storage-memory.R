@@ -52,8 +52,10 @@ InMemoryStorage <- R6::R6Class("InMemoryStorage",
       key <- paste(study_id, trial_id, sep = "_")
       private$.trials[[key]]$state <- state
       if (!is.null(value)) private$.trials[[key]]$value <- value
-      private$.trials[[key]]$datetime_complete <-
-        datetime_complete %||% Sys.time()
+      if (state %in% c("complete", "pruned", "failed")) {
+        private$.trials[[key]]$datetime_complete <-
+          datetime_complete %||% Sys.time()
+      }
     },
 
     set_trial_param = function(study_id, trial_id, param_name, distribution, value) {
