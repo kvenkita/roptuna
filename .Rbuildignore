@@ -1,0 +1,5 @@
+^\.github$
+^docs$
+^pkgdown$
+^CLAUDE\.md$
+^DECISIONS\.md$
