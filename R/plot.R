@@ -107,6 +107,8 @@ autoplot.Study <- function(object, type = "history", ...) {
 }
 
 .plot_importance <- function(study) {
+  if (!requireNamespace("rpart", quietly = TRUE))
+    stop("Package 'rpart' is required for param_importance plots.")
   df <- .completed_df(study)
   param_cols <- setdiff(names(df), c("trial_number", "value"))
 

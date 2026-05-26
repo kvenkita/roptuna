@@ -97,5 +97,3 @@ InMemoryStorage <- R6::R6Class("InMemoryStorage",
     .trial_counters = NULL
   )
 )
-
-`%||%` <- function(a, b) if (is.null(a)) b else a

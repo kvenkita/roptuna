@@ -64,8 +64,6 @@ TunerOptuna <- R6::R6Class("TunerOptuna",
         xdt <- data.table::as.data.table(params)
         inst$eval_batch(xdt)
 
-        if (inst$is_terminated) stop_prune()
-
         arch <- inst$archive$data
         arch[[inst$objective$codomain$target_ids]][[nrow(arch)]]
       }
