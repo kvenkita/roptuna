@@ -1,7 +1,6 @@
 ^\.github$
 ^docs$
 ^pkgdown$
-^CLAUDE\.md$
 ^DECISIONS\.md$
 ^README\.Rmd$
 ^README\.html$
