@@ -184,10 +184,7 @@ ggplot(df_dens, aes(x = x, y = y, colour = curve)) +
 ### Installation
 
 ``` r
-# From CRAN:
-install.packages("roptuna")
-
-# Development version from GitHub:
+# install.packages("remotes")
 remotes::install_github("kvenkita/roptuna")
 ```
 
