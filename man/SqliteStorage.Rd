@@ -16,6 +16,7 @@ storage <- SqliteStorage$new(tempfile(fileext = ".sqlite"))
 \itemize{
 \item \href{#method-SqliteStorage-new}{\code{SqliteStorage$new()}}
 \item \href{#method-SqliteStorage-create_study}{\code{SqliteStorage$create_study()}}
+\item \href{#method-SqliteStorage-get_study_directions}{\code{SqliteStorage$get_study_directions()}}
 \item \href{#method-SqliteStorage-get_study}{\code{SqliteStorage$get_study()}}
 \item \href{#method-SqliteStorage-set_study_user_attr}{\code{SqliteStorage$set_study_user_attr()}}
 \item \href{#method-SqliteStorage-get_study_user_attrs}{\code{SqliteStorage$get_study_user_attrs()}}
@@ -23,6 +24,7 @@ storage <- SqliteStorage$new(tempfile(fileext = ".sqlite"))
 \item \href{#method-SqliteStorage-create_trial}{\code{SqliteStorage$create_trial()}}
 \item \href{#method-SqliteStorage-set_trial_state}{\code{SqliteStorage$set_trial_state()}}
 \item \href{#method-SqliteStorage-set_trial_param}{\code{SqliteStorage$set_trial_param()}}
+\item \href{#method-SqliteStorage-set_trial_values}{\code{SqliteStorage$set_trial_values()}}
 \item \href{#method-SqliteStorage-set_trial_intermediate_value}{\code{SqliteStorage$set_trial_intermediate_value()}}
 \item \href{#method-SqliteStorage-set_trial_user_attr}{\code{SqliteStorage$set_trial_user_attr()}}
 \item \href{#method-SqliteStorage-get_trial}{\code{SqliteStorage$get_trial()}}
@@ -44,7 +46,16 @@ storage <- SqliteStorage$new(tempfile(fileext = ".sqlite"))
 \if{latex}{\out{\hypertarget{method-SqliteStorage-create_study}{}}}
 \subsection{Method \code{create_study()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SqliteStorage$create_study(study_name, direction)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SqliteStorage$create_study(study_name, direction, directions = NULL)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SqliteStorage-get_study_directions"></a>}}
+\if{latex}{\out{\hypertarget{method-SqliteStorage-get_study_directions}{}}}
+\subsection{Method \code{get_study_directions()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SqliteStorage$get_study_directions(study_id)}\if{html}{\out{</div>}}
 }
 
 }
@@ -120,6 +131,15 @@ storage <- SqliteStorage$new(tempfile(fileext = ".sqlite"))
   distribution,
   value
 )}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SqliteStorage-set_trial_values"></a>}}
+\if{latex}{\out{\hypertarget{method-SqliteStorage-set_trial_values}{}}}
+\subsection{Method \code{set_trial_values()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SqliteStorage$set_trial_values(study_id, trial_id, values)}\if{html}{\out{</div>}}
 }
 
 }

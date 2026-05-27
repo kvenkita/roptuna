@@ -11,6 +11,9 @@ hyperband_pruner <- function(min_resource = 1L, reduction_factor = 3L,
                       as.integer(min_early_stopping_rate), as.integer(n_brackets))
 }
 
+#' Hyperband pruner R6 class
+#'
+#' See [hyperband_pruner()] for the recommended constructor.
 #' @export
 HyperbandPruner <- R6::R6Class("HyperbandPruner",
   public = list(

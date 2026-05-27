@@ -30,6 +30,8 @@ study$optimize(function(trial) {
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
+\item{\code{trial_id}}{Internal trial identifier.}
+
 \item{\code{params}}{Named list of all suggested parameter values so far.}
 
 \item{\code{distributions}}{Named list of distributions for suggested parameters.}

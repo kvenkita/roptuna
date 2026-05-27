@@ -7,6 +7,9 @@ wilcoxon_pruner <- function(p_threshold = 0.1, n_startup_trials = 5L) {
   WilcoxonPruner$new(p_threshold, as.integer(n_startup_trials))
 }
 
+#' Wilcoxon pruner R6 class
+#'
+#' See [wilcoxon_pruner()] for the recommended constructor.
 #' @export
 WilcoxonPruner <- R6::R6Class("WilcoxonPruner",
   public = list(

@@ -21,6 +21,8 @@ study$best_value
 \itemize{
 \item \href{#method-Study-new}{\code{Study$new()}}
 \item \href{#method-Study-optimize}{\code{Study$optimize()}}
+\item \href{#method-Study-ask}{\code{Study$ask()}}
+\item \href{#method-Study-tell}{\code{Study$tell()}}
 \item \href{#method-Study-stop}{\code{Study$stop()}}
 \item \href{#method-Study-set_user_attr}{\code{Study$set_user_attr()}}
 \item \href{#method-Study-enqueue_trial}{\code{Study$enqueue_trial()}}
@@ -34,7 +36,15 @@ study$best_value
 \if{latex}{\out{\hypertarget{method-Study-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Study$new(study_id, study_name, direction, sampler, pruner, storage)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Study$new(
+  study_id,
+  study_name,
+  direction,
+  sampler,
+  pruner,
+  storage,
+  directions = NULL
+)}\if{html}{\out{</div>}}
 }
 
 }
@@ -49,7 +59,8 @@ Run the objective function for n_trials iterations.
   n_trials = 100,
   timeout = NULL,
   catch = character(),
-  callbacks = NULL
+  callbacks = NULL,
+  n_jobs = 1L
 )}\if{html}{\out{</div>}}
 }
 
@@ -65,6 +76,43 @@ Run the objective function for n_trials iterations.
 \item{\code{catch}}{Character vector of additional condition classes to catch as failed trials.}
 
 \item{\code{callbacks}}{List of functions \verb{function(study, trial_snapshot)} called after each trial.}
+
+\item{\code{n_jobs}}{Number of parallel workers (>1 requires \code{parallel} package).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Study-ask"></a>}}
+\if{latex}{\out{\hypertarget{method-Study-ask}{}}}
+\subsection{Method \code{ask()}}{
+Create a trial without evaluating the objective (decoupled API).
+Call tell() with the returned trial to record the result.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Study$ask()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A \code{Trial} R6 object ready for parameter suggestion.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Study-tell"></a>}}
+\if{latex}{\out{\hypertarget{method-Study-tell}{}}}
+\subsection{Method \code{tell()}}{
+Record the result of a trial created by ask().
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Study$tell(trial, values, state = "complete")}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{trial}}{A \code{Trial} object returned by ask().}
+
+\item{\code{values}}{Numeric scalar or vector (multi-obj), or NULL for failed/pruned.}
+
+\item{\code{state}}{"complete", "failed", or "pruned".}
 }
 \if{html}{\out{</div>}}
 }

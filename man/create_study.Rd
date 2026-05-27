@@ -10,7 +10,8 @@ create_study(
   pruner = NULL,
   storage = NULL,
   study_name = NULL,
-  load_if_exists = FALSE
+  load_if_exists = FALSE,
+  directions = NULL
 )
 }
 \arguments{

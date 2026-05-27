@@ -8,6 +8,9 @@ cmaes_sampler <- function(n_startup_trials = 1L, sigma0 = NULL, seed = NULL) {
   CmaEsSampler$new(as.integer(n_startup_trials), sigma0, seed)
 }
 
+#' CMA-ES sampler R6 class
+#'
+#' See [cmaes_sampler()] for the recommended constructor.
 #' @export
 CmaEsSampler <- R6::R6Class("CmaEsSampler",
   public = list(

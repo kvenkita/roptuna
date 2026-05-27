@@ -17,10 +17,12 @@ storage <- InMemoryStorage$new()
 \item \href{#method-InMemoryStorage-new}{\code{InMemoryStorage$new()}}
 \item \href{#method-InMemoryStorage-create_study}{\code{InMemoryStorage$create_study()}}
 \item \href{#method-InMemoryStorage-get_study}{\code{InMemoryStorage$get_study()}}
+\item \href{#method-InMemoryStorage-get_study_directions}{\code{InMemoryStorage$get_study_directions()}}
 \item \href{#method-InMemoryStorage-set_study_user_attr}{\code{InMemoryStorage$set_study_user_attr()}}
 \item \href{#method-InMemoryStorage-get_study_user_attrs}{\code{InMemoryStorage$get_study_user_attrs()}}
 \item \href{#method-InMemoryStorage-create_trial}{\code{InMemoryStorage$create_trial()}}
 \item \href{#method-InMemoryStorage-set_trial_state}{\code{InMemoryStorage$set_trial_state()}}
+\item \href{#method-InMemoryStorage-set_trial_values}{\code{InMemoryStorage$set_trial_values()}}
 \item \href{#method-InMemoryStorage-set_trial_param}{\code{InMemoryStorage$set_trial_param()}}
 \item \href{#method-InMemoryStorage-set_trial_intermediate_value}{\code{InMemoryStorage$set_trial_intermediate_value()}}
 \item \href{#method-InMemoryStorage-set_trial_user_attr}{\code{InMemoryStorage$set_trial_user_attr()}}
@@ -44,7 +46,7 @@ storage <- InMemoryStorage$new()
 \if{latex}{\out{\hypertarget{method-InMemoryStorage-create_study}{}}}
 \subsection{Method \code{create_study()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InMemoryStorage$create_study(study_name, direction)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InMemoryStorage$create_study(study_name, direction, directions = NULL)}\if{html}{\out{</div>}}
 }
 
 }
@@ -54,6 +56,15 @@ storage <- InMemoryStorage$new()
 \subsection{Method \code{get_study()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InMemoryStorage$get_study(study_id)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InMemoryStorage-get_study_directions"></a>}}
+\if{latex}{\out{\hypertarget{method-InMemoryStorage-get_study_directions}{}}}
+\subsection{Method \code{get_study_directions()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InMemoryStorage$get_study_directions(study_id)}\if{html}{\out{</div>}}
 }
 
 }
@@ -96,6 +107,15 @@ storage <- InMemoryStorage$new()
   value = NULL,
   datetime_complete = NULL
 )}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InMemoryStorage-set_trial_values"></a>}}
+\if{latex}{\out{\hypertarget{method-InMemoryStorage-set_trial_values}{}}}
+\subsection{Method \code{set_trial_values()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InMemoryStorage$set_trial_values(study_id, trial_id, values)}\if{html}{\out{</div>}}
 }
 
 }

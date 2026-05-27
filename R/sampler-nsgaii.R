@@ -11,6 +11,9 @@ nsgaii_sampler <- function(population_size = 50L, eta_c = 20, eta_m = 20,
   NSGAIISampler$new(as.integer(population_size), eta_c, eta_m, mutation_prob, seed)
 }
 
+#' NSGA-II sampler R6 class
+#'
+#' See [nsgaii_sampler()] for the recommended constructor.
 #' @export
 NSGAIISampler <- R6::R6Class("NSGAIISampler",
   public = list(
