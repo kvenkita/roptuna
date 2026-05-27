@@ -83,6 +83,8 @@ Trial <- R6::R6Class("Trial",
   ),
 
   active = list(
+    #' @field trial_id Internal trial identifier.
+    trial_id = function() private$.trial_id,
     #' @field params Named list of all suggested parameter values so far.
     params = function() {
       private$.storage$get_trial(

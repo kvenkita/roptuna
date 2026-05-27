@@ -21,7 +21,8 @@ NULL
 #' @export
 autoplot.Study <- function(object, type = "history", params = NULL, ...) {
   type <- match.arg(type, c("history", "parallel_coordinate", "param_importance",
-                            "intermediate_values", "contour", "slice", "edf"))
+                            "intermediate_values", "contour", "slice", "edf",
+                            "pareto_front"))
   switch(type,
     history              = .plot_history(object),
     parallel_coordinate  = .plot_parallel(object),
@@ -29,7 +30,8 @@ autoplot.Study <- function(object, type = "history", params = NULL, ...) {
     intermediate_values  = .plot_intermediate(object),
     contour              = .plot_contour(object, params),
     slice                = .plot_slice(object, params),
-    edf                  = .plot_edf(object)
+    edf                  = .plot_edf(object),
+    pareto_front         = .plot_pareto_front(object)
   )
 }
 
@@ -229,6 +231,43 @@ autoplot.Study <- function(object, type = "history", params = NULL, ...) {
     ggplot2::labs(
       title = "Slice plot: each parameter vs. objective",
       x = "Parameter value", y = "Objective"
+    ) +
+    ggplot2::theme_minimal()
+}
+
+.plot_pareto_front <- function(study) {
+  trials   <- study$trials
+  complete <- Filter(function(t) t$state == "complete" && !is.null(t$values), trials)
+  if (length(complete) == 0) stop("No completed multi-objective trials to plot.")
+
+  dirs <- study$directions
+  if (length(dirs) < 2)
+    stop("Pareto front plot requires at least 2 objectives (use directions= in create_study).")
+
+  best     <- study$best_trials
+  best_ids <- sapply(best, `[[`, "trial_id")
+
+  df <- do.call(rbind, lapply(complete, function(t) {
+    data.frame(
+      trial_id = t$trial_id,
+      obj1     = t$values[[1L]],
+      obj2     = t$values[[2L]],
+      pareto   = t$trial_id %in% best_ids,
+      stringsAsFactors = FALSE
+    )
+  }))
+
+  ggplot2::ggplot(df, ggplot2::aes(
+    x = .data$obj1, y = .data$obj2, colour = .data$pareto)) +
+    ggplot2::geom_point(size = 2.5, alpha = 0.8) +
+    ggplot2::scale_colour_manual(
+      values = c("FALSE" = "grey60", "TRUE" = "#c0392b"),
+      labels = c("FALSE" = "Dominated", "TRUE" = "Pareto front")) +
+    ggplot2::labs(
+      title  = paste("Pareto front --", study$study_name),
+      x = paste0("Objective 1 (", dirs[[1]], ")"),
+      y = paste0("Objective 2 (", dirs[[2]], ")"),
+      colour = NULL
     ) +
     ggplot2::theme_minimal()
 }

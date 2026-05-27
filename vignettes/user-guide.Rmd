@@ -194,7 +194,8 @@ Five functions are all you need for the basic workflow: `create_study()`, `study
 
 ```r
 study <- create_study(
-  direction      = "minimize",    # or "maximize"
+  direction      = "minimize",    # or "maximize" (single-objective)
+  directions     = NULL,          # multi-objective: e.g. c("minimize", "maximize")
   sampler        = tpe_sampler(), # sampling strategy; random_sampler() by default
   pruner         = NULL,          # early stopping (optional)
   storage        = NULL,          # InMemoryStorage by default
@@ -259,6 +260,8 @@ cat("Best depth: ", study_demo$best_params$depth, "\n")
 | **TPE** | `tpe_sampler(seed, n_startup_trials, gamma, n_ei_candidates)` | General purpose; default choice |
 | **Random** | `random_sampler(seed)` | Baselines; parallel embarrassingly-random search |
 | **Grid** | `grid_sampler(search_space)` | Exhaustive small grids; all combinations required |
+| **CMA-ES** | `cmaes_sampler(n_startup_trials, sigma0, seed)` | Continuous parameters; covariance-guided local search |
+| **NSGA-II** | `nsgaii_sampler(population_size, eta_c, eta_m, seed)` | Multi-objective studies |
 
 ### TPE vs Random: convergence comparison
 
@@ -329,6 +332,30 @@ grid_df <- do.call(rbind, lapply(study_grid$trials, function(t)
 print(grid_df[order(grid_df$value), ])
 ```
 
+### CMA-ES sampler
+
+The **CMA-ES** (Covariance Matrix Adaptation Evolution Strategy) sampler fits a multivariate normal distribution over completed trial parameter vectors and adapts the distribution's mean, covariance matrix, and step size every *λ* evaluations. It concentrates search along the principal axes of the objective landscape, which makes it particularly effective on **ill-conditioned continuous surfaces** — elongated valleys, ridges, or objectives where the parameters interact.
+
+CMA-ES applies only to `suggest_float()` parameters. Integer and categorical parameters fall back to independent sampling via TPE.
+
+```{r cmaes-demo}
+study_cmaes <- create_study("minimize",
+  sampler = cmaes_sampler(n_startup_trials = 10L, seed = 42L)
+)
+study_cmaes$optimize(function(trial) {
+  x <- trial$suggest_float("x", -5, 5)
+  y <- trial$suggest_float("y", -5, 5)
+  # Rosenbrock function: narrow curved valley; notoriously hard for axis-aligned methods
+  100 * (y - x^2)^2 + (1 - x)^2
+}, n_trials = 100)
+
+cat("Best value:", round(study_cmaes$best_value, 4), "\n")
+cat("Best x:    ", round(study_cmaes$best_params$x, 4), "\n")
+cat("Best y:    ", round(study_cmaes$best_params$y, 4), "\n")
+```
+
+The global minimum of the Rosenbrock function is 0 at (1, 1). CMA-ES locates it reliably because its covariance adaptation aligns the sampling ellipsoid with the curved valley, whereas TPE and random search would require far more trials to probe the narrow optimal region.
+
 ---
 
 ## Pruning
@@ -394,20 +421,224 @@ ggplot(trace_df, aes(x = epoch, y = loss,
         plot.subtitle   = element_text(colour = "grey40"))
 ```
 
-### MedianPruner vs SuccessiveHalvingPruner
+### Pruner reference
 
 | Pruner | Function | Mechanism |
 |---|---|---|
 | **Median** | `median_pruner(n_startup_trials, n_warmup_steps, interval_steps)` | Prune if loss > median of completed trials at the same step |
 | **Successive Halving (ASHA)** | `successive_halving_pruner(min_resource, reduction_factor)` | Promote only the top 1/η fraction to the next resource rung |
+| **Hyperband** | `hyperband_pruner(min_resource, reduction_factor, n_brackets)` | Multi-bracket SHA; robust to budget misspecification |
+| **Wilcoxon** | `wilcoxon_pruner(p_threshold, n_startup_trials)` | Non-parametric rank test vs completed trials at the same step |
+| **Percentile** | `percentile_pruner(percentile, n_startup_trials, n_warmup_steps)` | Prune if loss falls outside the top percentile |
+| **Threshold** | `threshold_pruner(lower, upper, n_startup_trials, n_warmup_steps)` | Prune if loss exceeds a fixed absolute threshold |
+| **Patient** | `patient_pruner(wrapped_pruner, patience, min_delta)` | Suppress a base pruner until no improvement for `patience` steps |
 
 The MedianPruner is the safer default: it requires relatively few completed trials before activating and does not depend on a predetermined total budget. The SuccessiveHalvingPruner is more aggressive and works best when individual trials are long and you have a large overall evaluation budget.
+
+### HyperbandPruner
+
+Hyperband (Li et al., 2017) removes the sensitivity of Successive Halving to the choice of `min_resource` by running **multiple SHA brackets in parallel**. Each new trial is assigned to a bracket by its trial index (round-robin), so the brackets operate at different resource rungs simultaneously without requiring you to pick one configuration upfront.
+
+```{r hyperband-demo}
+study_hb <- create_study(
+  "minimize",
+  sampler = tpe_sampler(seed = 42),
+  pruner  = hyperband_pruner(
+    min_resource            = 1L,
+    reduction_factor        = 3L,
+    min_early_stopping_rate = 0L,
+    n_brackets              = 3L
+  )
+)
+study_hb$optimize(function(trial) {
+  lr <- trial$suggest_float("lr", 1e-4, 1e-1, log = TRUE)
+  for (epoch in seq_len(27)) {
+    loss <- exp(-lr * epoch) + 0.1 + rnorm(1, 0, 0.02)
+    trial$report(loss, step = as.integer(epoch))
+    if (trial$should_prune()) stop_prune()
+  }
+  loss
+}, n_trials = 40)
+
+cat("State distribution:\n")
+print(table(sapply(study_hb$trials, `[[`, "state")))
+```
+
+### WilcoxonPruner
+
+The WilcoxonPruner applies a one-sided Wilcoxon rank-sum test at each step, comparing the current trial's loss against all completed trials at the same step. The trial is pruned when the p-value falls below `p_threshold`, indicating with high statistical confidence that the current trial's loss distribution is stochastically worse than existing trials.
+
+This pruner is more principled than a fixed-threshold rule and adapts automatically to the scale of the objective values.
+
+```{r wilcoxon-demo}
+study_wx <- create_study(
+  "minimize",
+  sampler = tpe_sampler(seed = 42),
+  pruner  = wilcoxon_pruner(p_threshold = 0.1, n_startup_trials = 5L)
+)
+study_wx$optimize(function(trial) {
+  lr <- trial$suggest_float("lr", 1e-4, 1e-1, log = TRUE)
+  for (epoch in seq_len(20)) {
+    loss <- exp(-lr * epoch) + 0.1 + rnorm(1, 0, 0.03)
+    trial$report(loss, step = as.integer(epoch))
+    if (trial$should_prune()) stop_prune()
+  }
+  loss
+}, n_trials = 40)
+
+cat("State distribution:\n")
+print(table(sapply(study_wx$trials, `[[`, "state")))
+```
+
+---
+
+## Multi-Objective Optimization
+
+Many real problems require balancing competing objectives simultaneously — maximising model accuracy while minimising inference latency, or maximising R² while minimising model complexity. Single-objective optimisation collapses this trade-off into a scalar, which requires you to commit to a weighting before the search begins. Multi-objective optimisation instead explores the full **Pareto front**: the set of non-dominated solutions where no objective can be improved without worsening another.
+
+### Creating a multi-objective study
+
+Pass a character vector to `directions=` instead of a single string. Use `nsgaii_sampler()`, which maintains population diversity along the front via non-dominated sorting and crowding distance selection.
+
+```{r multi-obj-setup}
+study_mo <- create_study(
+  directions = c("minimize", "minimize"),
+  sampler    = nsgaii_sampler(population_size = 30L, seed = 5L)
+)
+
+study_mo$optimize(function(trial) {
+  x <- trial$suggest_float("x", 0, 1)
+  y <- trial$suggest_float("y", 0, 1)
+  # Objective 1: distance from (0, 0)  — prefers lower-left
+  # Objective 2: distance from (1, 1)  — prefers upper-right
+  c(x^2 + y^2, (x - 1)^2 + (y - 1)^2)
+}, n_trials = 90)
+
+cat("Total trials:          ", study_mo$n_trials, "\n")
+cat("Pareto-optimal trials: ", length(study_mo$best_trials), "\n")
+```
+
+The objective function returns a **numeric vector** — one element per direction. `study$best_trials` returns the non-dominated subset.
+
+### Inspecting the Pareto front
+
+```{r pareto-inspect}
+pareto <- study_mo$best_trials
+pareto_df <- do.call(rbind, lapply(pareto, function(t)
+  data.frame(obj1 = t$values[[1]], obj2 = t$values[[2]])
+))
+pareto_df <- pareto_df[order(pareto_df$obj1), ]
+cat("Pareto front (obj1 = dist from (0,0), obj2 = dist from (1,1)):\n")
+print(head(round(pareto_df, 3), 8))
+```
+
+### Pareto front plot
+
+```{r pareto-plot, fig.height = 4}
+autoplot(study_mo, type = "pareto_front") +
+  labs(
+    subtitle = "Blue = Pareto-optimal (non-dominated); grey = dominated"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(plot.title    = element_text(face = "bold"),
+        plot.subtitle = element_text(colour = "grey40"))
+```
+
+The two objectives cannot both be minimised simultaneously: moving toward (0, 0) lowers obj1 but raises obj2, and vice versa. The Pareto front — the curved arc of non-dominated solutions — traces the efficient trade-off boundary between them.
+
+---
+
+## Decoupled Evaluation with ask() / tell()
+
+The standard `optimize()` loop samples parameters and evaluates the objective in a single synchronous cycle. The `ask()` / `tell()` API decouples these two steps, giving you explicit control over when trials are created and when their results are recorded. This is useful when:
+
+- Your objective is evaluated by an **external system** (a remote API, a subprocess, a hardware device) that operates asynchronously.
+- You need to **inspect or transform** the sampled parameters before submitting them to the evaluator.
+- You want to run **batched external evaluations** and report results in bulk.
+
+### Basic usage
+
+```{r ask-tell-demo}
+study_at <- create_study("minimize", sampler = tpe_sampler(seed = 42L))
+
+for (i in seq_len(30)) {
+  trial <- study_at$ask()                          # create trial, sample params
+  x     <- trial$suggest_float("x", -5, 5)         # read sampled parameter
+  value <- x^2 + rnorm(1, 0, 0.1)                  # evaluate (could be external)
+  study_at$tell(trial, value)                       # record result
+}
+
+cat("Best value:", round(study_at$best_value, 4), "\n")
+cat("Best x:    ", round(study_at$best_params$x, 4), "\n")
+```
+
+### Batched external evaluation
+
+For systems that accept a batch of inputs and return results asynchronously, you can keep multiple open trials simultaneously:
+
+```{r ask-tell-batch, eval = FALSE}
+study_batch <- create_study("minimize")
+
+# Sample 4 parameter sets at once
+open_trials <- lapply(seq_len(4), function(i) study_batch$ask())
+params      <- lapply(open_trials, function(t) t$suggest_float("x", -5, 5))
+
+# ... send params to external evaluator; wait for results ...
+values <- lapply(params, function(x) x^2)  # placeholder: local evaluation
+
+# Record results (order does not matter)
+for (i in seq_along(open_trials)) {
+  study_batch$tell(open_trials[[i]], values[[i]])
+}
+```
+
+`tell()` accepts an optional `state` argument (`"complete"` by default; also `"pruned"` or `"failed"`) for cases where the evaluation was cut short or failed.
+
+---
+
+## Parallel Trial Execution
+
+`study$optimize()` accepts an `n_jobs` argument that distributes trial evaluations across multiple R worker processes using the `parallel` package. This reduces wall-clock time when each trial takes seconds or minutes and the machine has multiple cores available.
+
+```{r parallel-demo}
+study_par <- create_study("minimize", sampler = random_sampler(seed = 1L))
+study_par$optimize(
+  function(trial) {
+    x <- trial$suggest_float("x", -5, 5)
+    y <- trial$suggest_float("y", -5, 5)
+    x^2 + y^2
+  },
+  n_trials = 20L,
+  n_jobs   = 2L
+)
+cat("Completed trials:", study_par$n_trials, "\n")
+cat("Best value:      ", round(study_par$best_value, 4), "\n")
+```
+
+### How it works
+
+1. The **main process** samples parameter values for a batch of `n_jobs` trials using the configured sampler.
+2. Parameter sets are serialised and dispatched to **PSOCK worker processes** via the `parallel` package.
+3. Workers evaluate the objective function and return objective values.
+4. The main process records all results to storage and repeats until `n_trials` are exhausted.
+
+Because all storage writes happen in the main process, parallel execution is safe with both `InMemoryStorage` and `SqliteStorage` without any additional configuration.
+
+### When parallel helps
+
+| Scenario | Recommendation |
+|---|---|
+| Objective takes < 0.5 s | `n_jobs = 1` — PSOCK startup cost exceeds savings |
+| Objective takes 1–10 s | `n_jobs = 2` to `n_jobs = 4` offers meaningful speedup |
+| Objective takes > 30 s | Use all available cores: `n_jobs = parallel::detectCores()` |
+
+Note that results will differ from a sequential run with the same seed, because the order in which parallel trials complete is non-deterministic.
 
 ---
 
 ## Visualisation
 
-`roptuna` implements `autoplot.Study` with three plot types. All three accept the `Study` object returned by `create_study()`.
+`roptuna` implements `autoplot.Study` with four plot types. All accept the `Study` object returned by `create_study()`.
 
 ### Setup: a multi-parameter study
 
@@ -451,11 +682,23 @@ autoplot(study_viz, type = "param_importance") +
 
 Parameter importance is estimated by fitting a shallow decision tree (`rpart`) to the completed trials and reporting the variable importance scores. Parameters with near-zero importance can often be fixed at their default values in subsequent rounds, effectively reducing the search space and making each remaining trial more informative.
 
+### Pareto front (multi-objective)
+
+For multi-objective studies, `type = "pareto_front"` plots all trials in objective-value space, colouring Pareto-optimal trials in blue and dominated trials in grey. See the [Multi-Objective Optimization](#multi-objective-optimization) section for a worked example.
+
+```r
+autoplot(study_mo, type = "pareto_front")
+```
+
 ---
 
-## Persistent Studies with SQLite
+## Persistent Studies
 
-By default, `roptuna` stores trial results in memory and they are lost when the R session ends. SQLite persistence provides a durable, queryable record that survives session restarts and can be shared across machines.
+`roptuna` offers two persistence backends. By default, trial results are stored in memory and are lost when the R session ends.
+
+### SQLite storage
+
+SQLite persistence provides a durable, queryable record that survives session restarts and can be shared across machines.
 
 ```{r sqlite-demo, message = FALSE}
 tmp_db <- tempfile(fileext = ".sqlite")
@@ -488,6 +731,46 @@ unlink(tmp_db)
 ```
 
 The `load_if_exists = TRUE` flag finds an existing study by name in the database rather than creating a fresh one. All prior trials are immediately available through `study$trials`, and the new sampler uses them to inform its subsequent suggestions — the optimisation continues where the previous session left off.
+
+### Journal storage
+
+`journal_storage()` is a lightweight alternative that appends each operation to a newline-delimited JSON file (`.jsonl`). It requires no database engine and produces a human-readable log that can be inspected with any text editor. On startup, `roptuna` replays the log to reconstruct the study state in memory.
+
+```{r journal-demo, message = FALSE}
+tmp_jl <- tempfile(fileext = ".jsonl")
+
+# First session: run 20 trials
+study_j1 <- create_study(
+  "minimize",
+  sampler    = tpe_sampler(seed = 11),
+  storage    = journal_storage(tmp_jl),
+  study_name = "journal-demo"
+)
+study_j1$optimize(function(trial) trial$suggest_float("x", -5, 5)^2,
+                  n_trials = 20)
+cat("Session 1 best:", round(study_j1$best_value, 5), "\n")
+
+# Second session: reload by replaying the log
+study_j2 <- create_study(
+  "minimize",
+  sampler        = tpe_sampler(seed = 22),
+  storage        = journal_storage(tmp_jl),
+  study_name     = "journal-demo",
+  load_if_exists = TRUE
+)
+study_j2$optimize(function(trial) trial$suggest_float("x", -5, 5)^2,
+                  n_trials = 20)
+cat("Session 2 total trials:", length(study_j2$trials), "\n")
+cat("Overall best:          ", round(study_j2$best_value, 6), "\n")
+
+unlink(tmp_jl)
+```
+
+| Backend | Function | Best for |
+|---|---|---|
+| **InMemory** | *(default)* | Single-session experiments; fastest |
+| **SQLite** | `sqlite_storage(path)` | Multi-session; resumable; full SQL query access |
+| **Journal** | `journal_storage(path)` | Lightweight persistence; human-readable log; no SQL required |
 
 ---
 

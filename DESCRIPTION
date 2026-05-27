@@ -40,6 +40,7 @@ Suggests:
     mlr3tuning (>= 0.17.0),
     paradox (>= 0.11.0),
     data.table (>= 1.14.0),
+    parallel,
     withr,
     knitr (>= 1.40),
     rmarkdown (>= 2.20),

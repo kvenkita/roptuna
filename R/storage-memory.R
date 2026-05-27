@@ -12,13 +12,14 @@ InMemoryStorage <- R6::R6Class("InMemoryStorage",
       private$.study_user_attrs <- list()
     },
 
-    create_study = function(study_name, direction) {
+    create_study = function(study_name, direction, directions = NULL) {
       private$.study_counter <- private$.study_counter + 1L
       sid <- private$.study_counter
       private$.studies[[as.character(sid)]] <- list(
         study_id   = sid,
         study_name = study_name,
-        direction  = direction
+        direction  = direction,
+        directions = directions
       )
       private$.trial_counters[[as.character(sid)]]   <- 0L
       private$.study_user_attrs[[as.character(sid)]] <- list()
@@ -29,6 +30,10 @@ InMemoryStorage <- R6::R6Class("InMemoryStorage",
       s <- private$.studies[[as.character(study_id)]]
       s$user_attrs <- private$.study_user_attrs[[as.character(study_id)]] %||% list()
       s
+    },
+
+    get_study_directions = function(study_id) {
+      private$.studies[[as.character(study_id)]]$directions
     },
 
     set_study_user_attr = function(study_id, key, value) {
@@ -51,6 +56,7 @@ InMemoryStorage <- R6::R6Class("InMemoryStorage",
         study_id            = study_id,
         state               = "running",
         value               = NULL,
+        values              = NULL,
         params              = list(),
         distributions       = list(),
         intermediate_values = stats::setNames(numeric(0), character(0)),
@@ -70,6 +76,11 @@ InMemoryStorage <- R6::R6Class("InMemoryStorage",
         private$.trials[[key]]$datetime_complete <-
           datetime_complete %||% Sys.time()
       }
+    },
+
+    set_trial_values = function(study_id, trial_id, values) {
+      key <- paste(study_id, trial_id, sep = "_")
+      private$.trials[[key]]$values <- as.numeric(values)
     },
 
     set_trial_param = function(study_id, trial_id, param_name, distribution, value) {
