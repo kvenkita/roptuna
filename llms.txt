@@ -8,6 +8,7 @@ sampling, trial pruning, and persistent study storage via SQLite.
 ## Installation
 
 ``` r
+
 # install.packages("remotes")
 remotes::install_github("kvenkita/roptuna")
 ```
@@ -15,6 +16,7 @@ remotes::install_github("kvenkita/roptuna")
 ## Quick start
 
 ``` r
+
 library(roptuna)
 
 objective <- function(trial) {

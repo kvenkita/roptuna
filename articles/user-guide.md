@@ -1,6 +1,7 @@
 # roptuna: A Practitioner's Guide to Hyperparameter Optimization
 
 ``` r
+
 library(roptuna)
 library(ggplot2)
 set.seed(42)
@@ -42,14 +43,14 @@ naturally and without extra machinery.
 Several packages address hyperparameter optimisation in R, each with
 different designs and tradeoffs.
 
-| Package                   | Method              | Interface            | Pruning       | Notes                           |
-|---------------------------|---------------------|----------------------|---------------|---------------------------------|
-| `roptuna`                 | TPE, Random, Grid   | Define-by-run        | Yes           | This package                    |
-| `mlr3tuning`              | Many (via learner)  | mlr3 ecosystem       | Via callbacks | Framework integration           |
-| `tune`                    | Many (via engine)   | tidymodels ecosystem | No            | Framework integration           |
-| `ParBayesianOptimization` | Gaussian process BO | Formula-based        | No            | GP-based; separate search space |
-| `rBayesianOptimization`   | Gaussian process BO | Formula-based        | No            | Simple single-file API          |
-| `irace`                   | Iterated racing     | Config-based         | No            | Algorithm configuration focus   |
+| Package | Method | Interface | Pruning | Notes |
+|----|----|----|----|----|
+| `roptuna` | TPE, Random, Grid | Define-by-run | Yes | This package |
+| `mlr3tuning` | Many (via learner) | mlr3 ecosystem | Via callbacks | Framework integration |
+| `tune` | Many (via engine) | tidymodels ecosystem | No | Framework integration |
+| `ParBayesianOptimization` | Gaussian process BO | Formula-based | No | GP-based; separate search space |
+| `rBayesianOptimization` | Gaussian process BO | Formula-based | No | Simple single-file API |
+| `irace` | Iterated racing | Config-based | No | Algorithm configuration focus |
 
 `roptuna` is a **standalone sampler library**: it does not require mlr3
 or tidymodels, but provides adapters for both so it can serve as the
@@ -76,13 +77,13 @@ divides past trials into two groups based on their objective value:
 - **Bad trials** (*g* group): the remaining 1 − γ fraction
 
 For each parameter, TPE fits a **kernel density estimate** over the
-parameter values that appeared in each group: $\ell(x)$ over good trials
-and $g(x)$ over bad trials. It then generates a set of candidate
-parameter values and selects the candidate where the **expected
-improvement score** $\ell(x)/g(x)$ is highest.
+parameter values that appeared in each group: $`\ell(x)`$ over good
+trials and $`g(x)`$ over bad trials. It then generates a set of
+candidate parameter values and selects the candidate where the
+**expected improvement score** $`\ell(x) / g(x)`$ is highest.
 
-The intuition is direct: a region where $\ell(x)$ is high and $g(x)$ is
-low is a region where good trials concentrate and bad trials do not —
+The intuition is direct: a region where $`\ell(x)`$ is high and $`g(x)`$
+is low is a region where good trials concentrate and bad trials do not —
 exactly where the next evaluation should land.
 
 ### Visualising the mechanism
@@ -92,6 +93,7 @@ objective. Points are coloured by whether they belong to the good
 (bottom 25%) or bad (top 75%) group.
 
 ``` r
+
 set.seed(7)
 x_obs <- runif(20, -5, 5)
 y_obs <- x_obs^2 + rnorm(20, sd = 0.5)
@@ -126,11 +128,12 @@ ggplot(data.frame(x = x_obs, y = y_obs, group = group),
 ![](user-guide_files/figure-html/tpe-scatter-1.png)
 
 Given these two groups, TPE fits a kernel density estimate for each and
-evaluates the acquisition function $\ell(x)/g(x)$ across the domain. The
-vertical dotted line marks where this ratio peaks — the suggested
+evaluates the acquisition function $`\ell(x) / g(x)`$ across the domain.
+The vertical dotted line marks where this ratio peaks — the suggested
 location for the next trial.
 
 ``` r
+
 x_good <- x_obs[y_obs <= threshold]
 x_bad  <- x_obs[y_obs >  threshold]
 x_grid <- seq(-5, 5, length.out = 300)
@@ -184,6 +187,7 @@ ggplot(df_dens, aes(x = x, y = y, colour = curve)) +
 ### Installation
 
 ``` r
+
 # install.packages("remotes")
 remotes::install_github("kvenkita/roptuna")
 ```
@@ -191,6 +195,7 @@ remotes::install_github("kvenkita/roptuna")
 ### A minimal example
 
 ``` r
+
 objective <- function(trial) {
   x <- trial$suggest_float("x", -5, 5)
   y <- trial$suggest_int("y", 1L, 5L)
@@ -221,6 +226,7 @@ Five functions are all you need for the basic workflow:
 ### `create_study()`
 
 ``` r
+
 study <- create_study(
   direction      = "minimize",    # or "maximize" (single-objective)
   directions     = NULL,          # multi-objective: e.g. c("minimize", "maximize")
@@ -238,6 +244,7 @@ Once a study has been optimised, the following properties expose
 results:
 
 ``` r
+
 study_props <- create_study("minimize", sampler = tpe_sampler(seed = 99))
 study_props$optimize(function(trial) {
   x <- trial$suggest_float("x", -10, 10)
@@ -259,12 +266,12 @@ cat("State table:\n"); print(table(sapply(study_props$trials, `[[`, "state")))
 
 ### `trial$suggest_*()` methods
 
-| Method                                             | Description        | Distribution              |
-|----------------------------------------------------|--------------------|---------------------------|
-| `trial$suggest_float(name, low, high)`             | Continuous uniform | *U*(low, high)            |
-| `trial$suggest_float(name, low, high, log = TRUE)` | Log-uniform        | *LogU*(low, high)         |
-| `trial$suggest_int(name, low, high)`               | Discrete uniform   | *DiscreteU*{low, …, high} |
-| `trial$suggest_categorical(name, choices)`         | Nominal choice     | Empirical from choices    |
+| Method | Description | Distribution |
+|----|----|----|
+| `trial$suggest_float(name, low, high)` | Continuous uniform | *U*(low, high) |
+| `trial$suggest_float(name, low, high, log = TRUE)` | Log-uniform | *LogU*(low, high) |
+| `trial$suggest_int(name, low, high)` | Discrete uniform | *DiscreteU*{low, …, high} |
+| `trial$suggest_categorical(name, choices)` | Nominal choice | Empirical from choices |
 
 **Parameters are idempotent within a trial.** Calling
 `suggest_float("lr", 0, 1)` twice in the same trial always returns the
@@ -279,6 +286,7 @@ probability mass at the high end of such a range; log scale distributes
 exploration evenly across magnitudes.
 
 ``` r
+
 study_demo <- create_study("minimize", sampler = tpe_sampler(seed = 7))
 study_demo$optimize(function(trial) {
   lr     <- trial$suggest_float("lr",     1e-5, 1e-1, log = TRUE)
@@ -302,13 +310,13 @@ cat("Best depth: ", study_demo$best_params$depth, "\n")
 
 ### Available samplers
 
-| Sampler     | Function                                                      | When to use                                           |
-|-------------|---------------------------------------------------------------|-------------------------------------------------------|
-| **TPE**     | `tpe_sampler(seed, n_startup_trials, gamma, n_ei_candidates)` | General purpose; default choice                       |
-| **Random**  | `random_sampler(seed)`                                        | Baselines; parallel embarrassingly-random search      |
-| **Grid**    | `grid_sampler(search_space)`                                  | Exhaustive small grids; all combinations required     |
-| **CMA-ES**  | `cmaes_sampler(n_startup_trials, sigma0, seed)`               | Continuous parameters; covariance-guided local search |
-| **NSGA-II** | `nsgaii_sampler(population_size, eta_c, eta_m, seed)`         | Multi-objective studies                               |
+| Sampler | Function | When to use |
+|----|----|----|
+| **TPE** | `tpe_sampler(seed, n_startup_trials, gamma, n_ei_candidates)` | General purpose; default choice |
+| **Random** | `random_sampler(seed)` | Baselines; parallel embarrassingly-random search |
+| **Grid** | `grid_sampler(search_space)` | Exhaustive small grids; all combinations required |
+| **CMA-ES** | `cmaes_sampler(n_startup_trials, sigma0, seed)` | Continuous parameters; covariance-guided local search |
+| **NSGA-II** | `nsgaii_sampler(population_size, eta_c, eta_m, seed)` | Multi-objective studies |
 
 ### TPE vs Random: convergence comparison
 
@@ -318,6 +326,7 @@ below has a clear basin near (0, 0) that TPE locates efficiently while
 random search takes longer.
 
 ``` r
+
 study_tpe <- create_study("minimize", sampler = tpe_sampler(seed = 123))
 study_tpe$optimize(function(trial) {
   x <- trial$suggest_float("x", -10, 10)
@@ -368,6 +377,7 @@ coverage matters more than sample efficiency — for example, when
 ablating a small set of architectural choices.
 
 ``` r
+
 study_grid <- create_study("minimize",
   sampler = grid_sampler(list(
     n_estimators = c(50L, 100L, 200L),
@@ -411,6 +421,7 @@ CMA-ES applies only to `suggest_float()` parameters. Integer and
 categorical parameters fall back to independent sampling via TPE.
 
 ``` r
+
 study_cmaes <- create_study("minimize",
   sampler = cmaes_sampler(n_startup_trials = 10L, seed = 42L)
 )
@@ -451,6 +462,7 @@ termination with
 [`stop_prune()`](https://kvenkita.github.io/roptuna/reference/stop_prune.md).
 
 ``` r
+
 study_prune <- create_study(
   "minimize",
   sampler = tpe_sampler(seed = 42),
@@ -483,6 +495,7 @@ short, while trials that converge quickly (high learning rate) run to
 completion.
 
 ``` r
+
 traces <- Filter(Negate(is.null), lapply(study_prune$trials, function(t) {
   iv <- t$intermediate_values
   if (length(iv) == 0) return(NULL)
@@ -516,15 +529,15 @@ ggplot(trace_df, aes(x = epoch, y = loss,
 
 ### Pruner reference
 
-| Pruner                        | Function                                                           | Mechanism                                                        |
-|-------------------------------|--------------------------------------------------------------------|------------------------------------------------------------------|
-| **Median**                    | `median_pruner(n_startup_trials, n_warmup_steps, interval_steps)`  | Prune if loss \> median of completed trials at the same step     |
-| **Successive Halving (ASHA)** | `successive_halving_pruner(min_resource, reduction_factor)`        | Promote only the top 1/η fraction to the next resource rung      |
-| **Hyperband**                 | `hyperband_pruner(min_resource, reduction_factor, n_brackets)`     | Multi-bracket SHA; robust to budget misspecification             |
-| **Wilcoxon**                  | `wilcoxon_pruner(p_threshold, n_startup_trials)`                   | Non-parametric rank test vs completed trials at the same step    |
-| **Percentile**                | `percentile_pruner(percentile, n_startup_trials, n_warmup_steps)`  | Prune if loss falls outside the top percentile                   |
-| **Threshold**                 | `threshold_pruner(lower, upper, n_startup_trials, n_warmup_steps)` | Prune if loss exceeds a fixed absolute threshold                 |
-| **Patient**                   | `patient_pruner(wrapped_pruner, patience, min_delta)`              | Suppress a base pruner until no improvement for `patience` steps |
+| Pruner | Function | Mechanism |
+|----|----|----|
+| **Median** | `median_pruner(n_startup_trials, n_warmup_steps, interval_steps)` | Prune if loss \> median of completed trials at the same step |
+| **Successive Halving (ASHA)** | `successive_halving_pruner(min_resource, reduction_factor)` | Promote only the top 1/η fraction to the next resource rung |
+| **Hyperband** | `hyperband_pruner(min_resource, reduction_factor, n_brackets)` | Multi-bracket SHA; robust to budget misspecification |
+| **Wilcoxon** | `wilcoxon_pruner(p_threshold, n_startup_trials)` | Non-parametric rank test vs completed trials at the same step |
+| **Percentile** | `percentile_pruner(percentile, n_startup_trials, n_warmup_steps)` | Prune if loss falls outside the top percentile |
+| **Threshold** | `threshold_pruner(lower, upper, n_startup_trials, n_warmup_steps)` | Prune if loss exceeds a fixed absolute threshold |
+| **Patient** | `patient_pruner(wrapped_pruner, patience, min_delta)` | Suppress a base pruner until no improvement for `patience` steps |
 
 The MedianPruner is the safer default: it requires relatively few
 completed trials before activating and does not depend on a
@@ -542,6 +555,7 @@ rungs simultaneously without requiring you to pick one configuration
 upfront.
 
 ``` r
+
 study_hb <- create_study(
   "minimize",
   sampler = tpe_sampler(seed = 42),
@@ -583,6 +597,7 @@ This pruner is more principled than a fixed-threshold rule and adapts
 automatically to the scale of the objective values.
 
 ``` r
+
 study_wx <- create_study(
   "minimize",
   sampler = tpe_sampler(seed = 42),
@@ -627,6 +642,7 @@ which maintains population diversity along the front via non-dominated
 sorting and crowding distance selection.
 
 ``` r
+
 study_mo <- create_study(
   directions = c("minimize", "minimize"),
   sampler    = nsgaii_sampler(population_size = 30L, seed = 5L)
@@ -652,6 +668,7 @@ direction. `study$best_trials` returns the non-dominated subset.
 ### Inspecting the Pareto front
 
 ``` r
+
 pareto <- study_mo$best_trials
 pareto_df <- do.call(rbind, lapply(pareto, function(t)
   data.frame(obj1 = t$values[[1]], obj2 = t$values[[2]])
@@ -674,6 +691,7 @@ print(head(round(pareto_df, 3), 8))
 ### Pareto front plot
 
 ``` r
+
 autoplot(study_mo, type = "pareto_front") +
   labs(
     subtitle = "Blue = Pareto-optimal (non-dominated); grey = dominated"
@@ -710,6 +728,7 @@ recorded. This is useful when:
 ### Basic usage
 
 ``` r
+
 study_at <- create_study("minimize", sampler = tpe_sampler(seed = 42L))
 
 for (i in seq_len(30)) {
@@ -731,6 +750,7 @@ For systems that accept a batch of inputs and return results
 asynchronously, you can keep multiple open trials simultaneously:
 
 ``` r
+
 study_batch <- create_study("minimize")
 
 # Sample 4 parameter sets at once
@@ -760,6 +780,7 @@ package. This reduces wall-clock time when each trial takes seconds or
 minutes and the machine has multiple cores available.
 
 ``` r
+
 study_par <- create_study("minimize", sampler = random_sampler(seed = 1L))
 study_par$optimize(
   function(trial) {
@@ -773,7 +794,7 @@ study_par$optimize(
 cat("Completed trials:", study_par$n_trials, "\n")
 #> Completed trials: 20
 cat("Best value:      ", round(study_par$best_value, 4), "\n")
-#> Best value:       1.2859
+#> Best value:       0.8434
 ```
 
 ### How it works
@@ -792,11 +813,11 @@ without any additional configuration.
 
 ### When parallel helps
 
-| Scenario                 | Recommendation                                              |
-|--------------------------|-------------------------------------------------------------|
-| Objective takes \< 0.5 s | `n_jobs = 1` — PSOCK startup cost exceeds savings           |
-| Objective takes 1–10 s   | `n_jobs = 2` to `n_jobs = 4` offers meaningful speedup      |
-| Objective takes \> 30 s  | Use all available cores: `n_jobs = parallel::detectCores()` |
+| Scenario | Recommendation |
+|----|----|
+| Objective takes \< 0.5 s | `n_jobs = 1` — PSOCK startup cost exceeds savings |
+| Objective takes 1–10 s | `n_jobs = 2` to `n_jobs = 4` offers meaningful speedup |
+| Objective takes \> 30 s | Use all available cores: `n_jobs = parallel::detectCores()` |
 
 Note that results will differ from a sequential run with the same seed,
 because the order in which parallel trials complete is
@@ -813,6 +834,7 @@ the `Study` object returned by
 ### Setup: a multi-parameter study
 
 ``` r
+
 study_viz <- create_study("minimize", sampler = tpe_sampler(seed = 42))
 study_viz$optimize(function(trial) {
   lr      <- trial$suggest_float("lr",      1e-4, 1.0, log = TRUE)
@@ -825,6 +847,7 @@ study_viz$optimize(function(trial) {
 ### Optimization history
 
 ``` r
+
 autoplot(study_viz, type = "history") +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold"))
@@ -841,6 +864,7 @@ well-explored.
 ### Parallel coordinates
 
 ``` r
+
 autoplot(study_viz, type = "parallel_coordinate") +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold"))
@@ -858,6 +882,7 @@ miss.
 ### Parameter importance
 
 ``` r
+
 autoplot(study_viz, type = "param_importance") +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold"))
@@ -880,6 +905,7 @@ Optimization](#multi-objective-optimization) section for a worked
 example.
 
 ``` r
+
 autoplot(study_mo, type = "pareto_front")
 ```
 
@@ -896,6 +922,7 @@ SQLite persistence provides a durable, queryable record that survives
 session restarts and can be shared across machines.
 
 ``` r
+
 tmp_db <- tempfile(fileext = ".sqlite")
 
 # First session: run 20 trials
@@ -944,6 +971,7 @@ editor. On startup, `roptuna` replays the log to reconstruct the study
 state in memory.
 
 ``` r
+
 tmp_jl <- tempfile(fileext = ".jsonl")
 
 # First session: run 20 trials
@@ -976,11 +1004,11 @@ cat("Overall best:          ", round(study_j2$best_value, 6), "\n")
 unlink(tmp_jl)
 ```
 
-| Backend      | Function                | Best for                                                     |
-|--------------|-------------------------|--------------------------------------------------------------|
-| **InMemory** | *(default)*             | Single-session experiments; fastest                          |
-| **SQLite**   | `sqlite_storage(path)`  | Multi-session; resumable; full SQL query access              |
-| **Journal**  | `journal_storage(path)` | Lightweight persistence; human-readable log; no SQL required |
+| Backend | Function | Best for |
+|----|----|----|
+| **InMemory** | *(default)* | Single-session experiments; fastest |
+| **SQLite** | `sqlite_storage(path)` | Multi-session; resumable; full SQL query access |
+| **Journal** | `journal_storage(path)` | Lightweight persistence; human-readable log; no SQL required |
 
 ------------------------------------------------------------------------
 
@@ -992,6 +1020,7 @@ cross-validation as the objective, and all three plot types applied to
 the results.
 
 ``` r
+
 set.seed(42)
 
 iris_objective <- function(trial) {
@@ -1028,6 +1057,7 @@ cat("Best params:\n"); str(study_iris$best_params)
 ```
 
 ``` r
+
 autoplot(study_iris, type = "history") +
   labs(subtitle = "iris CART: 5-fold CV error over 60 trials") +
   theme_minimal(base_size = 11) +
@@ -1038,6 +1068,7 @@ autoplot(study_iris, type = "history") +
 ![](user-guide_files/figure-html/rpart-history-1.png)
 
 ``` r
+
 autoplot(study_iris, type = "parallel_coordinate") +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold"))
@@ -1046,6 +1077,7 @@ autoplot(study_iris, type = "parallel_coordinate") +
 ![](user-guide_files/figure-html/rpart-parallel-1.png)
 
 ``` r
+
 autoplot(study_iris, type = "param_importance") +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold"))
@@ -1071,6 +1103,7 @@ framework’s existing workflow, resampling, and metric infrastructure.
 ### tidymodels
 
 ``` r
+
 library(tune); library(parsnip); library(rsample); library(workflows)
 
 dt_spec <- decision_tree(
@@ -1094,6 +1127,7 @@ tune::show_best(res)
 ### mlr3
 
 ``` r
+
 library(mlr3); library(mlr3tuning); library(paradox)
 
 task    <- tsk("iris")
@@ -1143,6 +1177,7 @@ naturally — only call `suggest_*()` for parameters that are active given
 earlier choices.
 
 ``` r
+
 study_cond <- create_study("minimize", sampler = tpe_sampler(seed = 42))
 study_cond$optimize(function(trial) {
   model <- trial$suggest_categorical("model", c("linear", "tree"))
@@ -1177,6 +1212,7 @@ out-of-memory error on an extreme hyperparameter combination — use the
 the study:
 
 ``` r
+
 study_robust <- create_study("minimize")
 study_robust$optimize(
   function(trial) {
@@ -1206,6 +1242,7 @@ For production HPO where wall-clock time matters more than a fixed trial
 count, use `timeout` (seconds) instead of or in addition to `n_trials`:
 
 ``` r
+
 study$optimize(objective, n_trials = 1000L, timeout = 3600)  # stop after 1 hour
 ```
 
@@ -1240,6 +1277,7 @@ and the Optuna paper:
 ```
 
 ``` r
+
 citation("roptuna")
 ```
 

@@ -24,6 +24,7 @@ twice in the same trial always returns the same value.
 ## A complete example
 
 ``` r
+
 library(roptuna)
 
 objective <- function(trial) {
@@ -48,6 +49,7 @@ intermediate values, check `trial$should_prune()`, and call
 to signal that the trial should be abandoned:
 
 ``` r
+
 objective_with_pruning <- function(trial) {
   lr <- trial$suggest_float("lr", 1e-5, 1e-1, log = TRUE)
 
@@ -72,6 +74,7 @@ study$optimize(objective_with_pruning, n_trials = 30)
 Store trials in a file so you can resume later or share with colleagues:
 
 ``` r
+
 study <- create_study(
   direction  = "minimize",
   storage    = sqlite_storage("my_study.sqlite"),
@@ -92,6 +95,7 @@ study2$optimize(objective, n_trials = 20)  # adds 20 more trials
 ## Visualisation
 
 ``` r
+
 autoplot(study, type = "history")           # best value over time
 autoplot(study, type = "parallel_coordinate")  # parameter relationships
 autoplot(study, type = "param_importance")  # which params matter most

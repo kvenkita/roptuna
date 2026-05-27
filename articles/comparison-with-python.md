@@ -15,6 +15,7 @@ study = optuna.create_study(direction="minimize")
 **R:**
 
 ``` r
+
 library(roptuna)
 study <- create_study(direction = "minimize")
 ```
@@ -35,6 +36,7 @@ study.optimize(objective, n_trials=50)
 **R:**
 
 ``` r
+
 objective <- function(trial) {
   x <- trial$suggest_float("x", -10, 10)
   y <- trial$suggest_int("y", 1L, 5L)
@@ -55,6 +57,7 @@ study.best_params
 **R:**
 
 ``` r
+
 study$best_value
 study$best_params
 ```
@@ -70,6 +73,7 @@ optimizer = trial.suggest_categorical("optimizer", ["adam", "sgd", "rmsprop"])
 **R:**
 
 ``` r
+
 optimizer <- trial$suggest_categorical("optimizer", c("adam", "sgd", "rmsprop"))
 ```
 
@@ -87,6 +91,7 @@ study = optuna.create_study(
 **R:**
 
 ``` r
+
 study <- create_study(
   storage    = sqlite_storage("my_study.sqlite"),
   study_name = "my_study"
