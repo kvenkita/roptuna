@@ -20,14 +20,22 @@ float_distribution <- function(low, high, log = FALSE, step = NULL) {
 #' Create an integer distribution
 #' @param low Lower bound (inclusive).
 #' @param high Upper bound (inclusive).
+#' @param log If TRUE, sample in log space. Both bounds must be positive integers.
+#' @param step Step size between valid integers (default 1).
 #' @return An S3 object of class `roptuna_int_distribution`.
 #' @examples
 #' int_distribution(1L, 10L)
+#' int_distribution(32L, 256L, step = 32L)
 #' @export
-int_distribution <- function(low, high) {
-  low <- as.integer(low); high <- as.integer(high)
+int_distribution <- function(low, high, log = FALSE, step = 1L) {
+  low  <- as.integer(low)
+  high <- as.integer(high)
+  step <- as.integer(step)
   if (low > high) stop("low must be less than or equal to high")
-  structure(list(low = low, high = high), class = "roptuna_int_distribution")
+  if (log && low <= 0L) stop("int_distribution with log=TRUE requires positive bounds")
+  if (step < 1L) stop("step must be >= 1")
+  structure(list(low = low, high = high, log = log, step = step),
+            class = "roptuna_int_distribution")
 }
 
 #' Create a categorical distribution
@@ -44,10 +52,11 @@ categorical_distribution <- function(choices) {
 dist_to_list <- function(d) {
   if (inherits(d, "roptuna_float_distribution")) {
     dl <- list(name = "FloatDistribution", low = d$low, high = d$high, log = d$log)
-    if (!is.null(d$step)) dl$step <- d$step  # omit NULL; jsonlite serialises NULL as "{}"
+    if (!is.null(d$step)) dl$step <- d$step
     dl
   } else if (inherits(d, "roptuna_int_distribution")) {
-    list(name = "IntDistribution", low = d$low, high = d$high)
+    list(name = "IntDistribution", low = d$low, high = d$high,
+         log = d$log, step = d$step)
   } else {
     list(name = "CategoricalDistribution", choices = d$choices)
   }
@@ -55,10 +64,12 @@ dist_to_list <- function(d) {
 
 dist_from_list <- function(x) {
   switch(x$name,
-    FloatDistribution       = float_distribution(x$low, x$high,
-                                log = isTRUE(x$log),
-                                step = if (length(x$step) == 1) x$step else NULL),
-    IntDistribution         = int_distribution(x$low, x$high),
+    FloatDistribution = float_distribution(x$low, x$high,
+      log  = isTRUE(x$log),
+      step = if (length(x$step) == 1) x$step else NULL),
+    IntDistribution = int_distribution(x$low, x$high,
+      log  = isTRUE(x$log),
+      step = if (!is.null(x$step) && length(x$step) == 1) as.integer(x$step) else 1L),
     CategoricalDistribution = categorical_distribution(x$choices)
   )
 }
@@ -74,8 +85,16 @@ dist_sample_random <- function(d) {
       stats::runif(1, d$low, d$high)
     }
   } else if (inherits(d, "roptuna_int_distribution")) {
-    if (d$low == d$high) return(d$low)
-    sample.int(d$high - d$low + 1L, 1L) + d$low - 1L
+    if (d$log) {
+      val <- exp(stats::runif(1, log(d$low), log(d$high)))
+      as.integer(max(d$low, min(d$high, round(val))))
+    } else if (d$step > 1L) {
+      steps <- seq(d$low, d$high, by = d$step)
+      as.integer(sample(steps, 1))
+    } else {
+      if (d$low == d$high) return(d$low)
+      sample.int(d$high - d$low + 1L, 1L) + d$low - 1L
+    }
   } else {
     sample(d$choices, 1)
   }

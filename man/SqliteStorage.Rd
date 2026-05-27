@@ -17,6 +17,9 @@ storage <- SqliteStorage$new(tempfile(fileext = ".sqlite"))
 \item \href{#method-SqliteStorage-new}{\code{SqliteStorage$new()}}
 \item \href{#method-SqliteStorage-create_study}{\code{SqliteStorage$create_study()}}
 \item \href{#method-SqliteStorage-get_study}{\code{SqliteStorage$get_study()}}
+\item \href{#method-SqliteStorage-set_study_user_attr}{\code{SqliteStorage$set_study_user_attr()}}
+\item \href{#method-SqliteStorage-get_study_user_attrs}{\code{SqliteStorage$get_study_user_attrs()}}
+\item \href{#method-SqliteStorage-find_study}{\code{SqliteStorage$find_study()}}
 \item \href{#method-SqliteStorage-create_trial}{\code{SqliteStorage$create_trial()}}
 \item \href{#method-SqliteStorage-set_trial_state}{\code{SqliteStorage$set_trial_state()}}
 \item \href{#method-SqliteStorage-set_trial_param}{\code{SqliteStorage$set_trial_param()}}
@@ -51,6 +54,33 @@ storage <- SqliteStorage$new(tempfile(fileext = ".sqlite"))
 \subsection{Method \code{get_study()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SqliteStorage$get_study(study_id)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SqliteStorage-set_study_user_attr"></a>}}
+\if{latex}{\out{\hypertarget{method-SqliteStorage-set_study_user_attr}{}}}
+\subsection{Method \code{set_study_user_attr()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SqliteStorage$set_study_user_attr(study_id, key, value)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SqliteStorage-get_study_user_attrs"></a>}}
+\if{latex}{\out{\hypertarget{method-SqliteStorage-get_study_user_attrs}{}}}
+\subsection{Method \code{get_study_user_attrs()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SqliteStorage$get_study_user_attrs(study_id)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SqliteStorage-find_study"></a>}}
+\if{latex}{\out{\hypertarget{method-SqliteStorage-find_study}{}}}
+\subsection{Method \code{find_study()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SqliteStorage$find_study(study_name)}\if{html}{\out{</div>}}
 }
 
 }

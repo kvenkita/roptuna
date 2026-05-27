@@ -12,21 +12,38 @@ GridSampler <- R6::R6Class("GridSampler",
     initialize = function(search_space) {
       private$.grid <- do.call(expand.grid,
         c(search_space, list(stringsAsFactors = FALSE)))
-      private$.used <- rep(FALSE, nrow(private$.grid))
     },
     sample_independent = function(study, trial, param_name, distribution) {
       dist_sample_random(distribution)
     },
     sample_relative = function(study, trial, distributions, search_space) {
-      unused <- which(!private$.used)
+      # Derive used rows from completed+running trials rather than in-memory state,
+      # so this works correctly across SQLite restarts.
+      all_trials <- study$storage_ref$get_all_trials(study$study_id)
+      param_cols <- names(private$.grid)
+
+      used_rows <- logical(nrow(private$.grid))
+      for (t in all_trials) {
+        if (length(t$params) == 0) next
+        for (i in which(!used_rows)) {
+          if (all(sapply(param_cols, function(col) {
+            pval <- t$params[[col]]
+            !is.null(pval) &&
+              isTRUE(all.equal(pval, private$.grid[i, col, drop = TRUE]))
+          }))) {
+            used_rows[i] <- TRUE
+            break
+          }
+        }
+      }
+
+      unused <- which(!used_rows)
       if (length(unused) == 0) {
         return(stats::setNames(
           lapply(names(distributions), function(n) dist_sample_random(distributions[[n]])),
           names(distributions)))
       }
-      idx <- unused[[1]]
-      private$.used[[idx]] <- TRUE
-      as.list(private$.grid[idx, , drop = FALSE])
+      as.list(private$.grid[unused[[1]], , drop = FALSE])
     },
     infer_relative_search_space = function(study, trial) {
       stats::setNames(
@@ -35,5 +52,5 @@ GridSampler <- R6::R6Class("GridSampler",
         names(private$.grid))
     }
   ),
-  private = list(.grid = NULL, .used = NULL)
+  private = list(.grid = NULL)
 )

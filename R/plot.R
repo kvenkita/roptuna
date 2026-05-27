@@ -4,7 +4,10 @@ NULL
 #' Plot an roptuna study
 #'
 #' @param object A `Study` R6 object.
-#' @param type One of `"history"`, `"parallel_coordinate"`, `"param_importance"`.
+#' @param type One of `"history"`, `"parallel_coordinate"`, `"param_importance"`,
+#'   `"intermediate_values"`, `"contour"`, `"slice"`, `"edf"`.
+#' @param params For `"contour"`: character vector of exactly two parameter names.
+#'   For `"slice"`: character vector of parameter names to include (default: all).
 #' @param ... Unused.
 #' @return A `ggplot2` object.
 #' @examples
@@ -16,17 +19,24 @@ NULL
 #' }, n_trials = 10)
 #' ggplot2::autoplot(study, type = "history")
 #' @export
-autoplot.Study <- function(object, type = "history", ...) {
-  type <- match.arg(type, c("history", "parallel_coordinate", "param_importance"))
+autoplot.Study <- function(object, type = "history", params = NULL, ...) {
+  type <- match.arg(type, c("history", "parallel_coordinate", "param_importance",
+                            "intermediate_values", "contour", "slice", "edf"))
   switch(type,
-    history             = .plot_history(object),
-    parallel_coordinate = .plot_parallel(object),
-    param_importance    = .plot_importance(object)
+    history              = .plot_history(object),
+    parallel_coordinate  = .plot_parallel(object),
+    param_importance     = .plot_importance(object),
+    intermediate_values  = .plot_intermediate(object),
+    contour              = .plot_contour(object, params),
+    slice                = .plot_slice(object, params),
+    edf                  = .plot_edf(object)
   )
 }
 
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
 .completed_df <- function(study) {
-  trials  <- study$trials
+  trials   <- study$trials
   complete <- Filter(function(t) t$state == "complete", trials)
   if (length(complete) == 0) stop("No completed trials to plot.")
 
@@ -43,15 +53,14 @@ autoplot.Study <- function(object, type = "history", ...) {
   }, rows)
 }
 
+# ── Plot types ────────────────────────────────────────────────────────────────
+
 .plot_history <- function(study) {
   df <- .completed_df(study)
   df <- df[order(df$trial_number), ]
 
-  if (study$direction == "minimize") {
-    df$best_so_far <- cummin(df$value)
-  } else {
-    df$best_so_far <- cummax(df$value)
-  }
+  df$best_so_far <- if (study$direction == "minimize")
+    cummin(df$value) else cummax(df$value)
 
   ggplot2::ggplot(df, ggplot2::aes(x = .data$trial_number)) +
     ggplot2::geom_point(ggplot2::aes(y = .data$value), alpha = 0.4, size = 1.5) +
@@ -65,9 +74,8 @@ autoplot.Study <- function(object, type = "history", ...) {
 }
 
 .plot_parallel <- function(study) {
-  df <- .completed_df(study)
+  df         <- .completed_df(study)
   param_cols <- setdiff(names(df), c("trial_number", "value"))
-
   if (length(param_cols) == 0)
     stop("No parameters to plot in parallel coordinates.")
 
@@ -84,23 +92,18 @@ autoplot.Study <- function(object, type = "history", ...) {
   }
 
   long <- stats::reshape(df_norm[, c("trial_number", "value", param_cols)],
-    varying   = param_cols,
-    v.names   = "norm_val",
-    timevar   = "param",
-    times     = param_cols,
-    direction = "long"
-  )
+    varying   = param_cols, v.names = "norm_val",
+    timevar   = "param",    times    = param_cols, direction = "long")
 
   ggplot2::ggplot(long,
     ggplot2::aes(x = .data$param, y = .data$norm_val,
-                 group = .data$trial_number,
-                 colour = .data$value)) +
+                 group = .data$trial_number, colour = .data$value)) +
     ggplot2::geom_line(alpha = 0.5) +
     ggplot2::scale_colour_viridis_c(
       direction = if (study$direction == "minimize") 1 else -1) +
     ggplot2::labs(
       title  = "Parallel coordinates -- hyperparameter values",
-      x      = NULL, y = "Normalised value", colour = "Objective"
+      x = NULL, y = "Normalised value", colour = "Objective"
     ) +
     ggplot2::theme_minimal() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 30, hjust = 1))
@@ -109,25 +112,21 @@ autoplot.Study <- function(object, type = "history", ...) {
 .plot_importance <- function(study) {
   if (!requireNamespace("rpart", quietly = TRUE))
     stop("Package 'rpart' is required for param_importance plots.")
-  df <- .completed_df(study)
+  df         <- .completed_df(study)
   param_cols <- setdiff(names(df), c("trial_number", "value"))
-
-  if (length(param_cols) == 0)
-    stop("No parameters to compute importance for.")
+  if (length(param_cols) == 0) stop("No parameters to compute importance for.")
 
   df_enc <- df[, c(param_cols, "value"), drop = FALSE]
-  for (col in param_cols) {
+  for (col in param_cols)
     if (!is.numeric(df_enc[[col]]))
       df_enc[[col]] <- as.integer(factor(df_enc[[col]]))
-  }
 
   fit <- rpart::rpart(value ~ ., data = df_enc, method = "anova",
                       control = rpart::rpart.control(maxdepth = 4))
-
   imp <- fit$variable.importance
-  if (is.null(imp) || length(imp) == 0) {
+  if (is.null(imp) || length(imp) == 0)
     imp <- stats::setNames(rep(1, length(param_cols)), param_cols)
-  }
+
   imp_df <- data.frame(
     param      = names(imp),
     importance = as.numeric(imp) / sum(imp),
@@ -140,9 +139,113 @@ autoplot.Study <- function(object, type = "history", ...) {
                  y = .data$importance)) +
     ggplot2::geom_col(fill = "#2171b5") +
     ggplot2::coord_flip() +
+    ggplot2::labs(title = "Parameter importance (decision tree)", x = NULL,
+                  y = "Relative importance") +
+    ggplot2::theme_minimal()
+}
+
+.plot_intermediate <- function(study) {
+  trials <- study$trials
+  has_iv <- Filter(function(t) length(t$intermediate_values) > 0, trials)
+  if (length(has_iv) == 0)
+    stop("No trials with intermediate values to plot.")
+
+  rows <- do.call(rbind, lapply(has_iv, function(t) {
+    steps <- as.integer(names(t$intermediate_values))
+    vals  <- unlist(t$intermediate_values)
+    data.frame(
+      trial_number = t$number,
+      step         = steps,
+      value        = vals,
+      final_value  = if (t$state == "complete") t$value else NA_real_,
+      state        = t$state,
+      stringsAsFactors = FALSE
+    )
+  }))
+
+  ggplot2::ggplot(rows, ggplot2::aes(
+    x = .data$step, y = .data$value,
+    group = .data$trial_number,
+    colour = .data$final_value)) +
+    ggplot2::geom_line(alpha = 0.7) +
+    ggplot2::geom_point(size = 1, alpha = 0.5) +
+    ggplot2::scale_colour_viridis_c(na.value = "grey70",
+      direction = if (study$direction == "minimize") 1 else -1) +
     ggplot2::labs(
-      title = "Parameter importance (decision tree)",
-      x = NULL, y = "Relative importance"
+      title  = "Intermediate values per trial",
+      x = "Step", y = "Intermediate value", colour = "Final value"
+    ) +
+    ggplot2::theme_minimal()
+}
+
+.plot_contour <- function(study, params = NULL) {
+  df         <- .completed_df(study)
+  param_cols <- setdiff(names(df), c("trial_number", "value"))
+
+  if (!is.null(params)) {
+    param_cols <- intersect(params, param_cols)
+  }
+  if (length(param_cols) < 2)
+    stop("Need at least 2 parameters for a contour plot. ",
+         "Use the `params` argument to specify two parameter names.")
+  if (length(param_cols) > 2) param_cols <- param_cols[1:2]
+
+  p1 <- param_cols[1]; p2 <- param_cols[2]
+
+  ggplot2::ggplot(df, ggplot2::aes(
+    x = .data[[p1]], y = .data[[p2]], colour = .data$value)) +
+    ggplot2::geom_point(size = 2.5, alpha = 0.8) +
+    ggplot2::scale_colour_viridis_c(
+      direction = if (study$direction == "minimize") 1 else -1) +
+    ggplot2::labs(
+      title  = paste("Contour:", p1, "vs", p2),
+      x = p1, y = p2, colour = "Objective"
+    ) +
+    ggplot2::theme_minimal()
+}
+
+.plot_slice <- function(study, params = NULL) {
+  df         <- .completed_df(study)
+  param_cols <- setdiff(names(df), c("trial_number", "value"))
+  if (!is.null(params)) param_cols <- intersect(params, param_cols)
+  if (length(param_cols) == 0) stop("No parameters to plot.")
+
+  long <- do.call(rbind, lapply(param_cols, function(p) {
+    data.frame(
+      param       = p,
+      param_value = as.character(df[[p]]),
+      param_num   = if (is.numeric(df[[p]])) df[[p]] else
+                      as.numeric(factor(df[[p]])),
+      objective   = df$value,
+      stringsAsFactors = FALSE
+    )
+  }))
+
+  ggplot2::ggplot(long, ggplot2::aes(x = .data$param_num, y = .data$objective)) +
+    ggplot2::geom_point(alpha = 0.6, colour = "#2171b5") +
+    ggplot2::geom_smooth(method = "loess", formula = y ~ x,
+                         se = FALSE, colour = "#c0392b", linewidth = 0.8) +
+    ggplot2::facet_wrap(~ .data$param, scales = "free_x") +
+    ggplot2::labs(
+      title = "Slice plot: each parameter vs. objective",
+      x = "Parameter value", y = "Objective"
+    ) +
+    ggplot2::theme_minimal()
+}
+
+.plot_edf <- function(study) {
+  trials <- Filter(function(t) t$state == "complete", study$trials)
+  if (length(trials) == 0) stop("No completed trials to plot.")
+
+  vals <- sort(sapply(trials, `[[`, "value"))
+  n    <- length(vals)
+  df   <- data.frame(value = vals, ecdf = seq_len(n) / n)
+
+  ggplot2::ggplot(df, ggplot2::aes(x = .data$value, y = .data$ecdf)) +
+    ggplot2::geom_step(colour = "#2171b5", linewidth = 1) +
+    ggplot2::labs(
+      title = "Empirical distribution of objective values",
+      x = "Objective value", y = "Cumulative proportion"
     ) +
     ggplot2::theme_minimal()
 }

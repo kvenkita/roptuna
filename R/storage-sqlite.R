@@ -24,6 +24,7 @@ SqliteStorage <- R6::R6Class("SqliteStorage",
       con <- private$.con(); on.exit(DBI::dbDisconnect(con))
       private$.init_schema(con)
     },
+
     create_study = function(study_name, direction) {
       con <- private$.con(); on.exit(DBI::dbDisconnect(con))
       DBI::dbExecute(con,
@@ -31,11 +32,45 @@ SqliteStorage <- R6::R6Class("SqliteStorage",
         list(study_name, direction))
       as.integer(DBI::dbGetQuery(con, "SELECT last_insert_rowid()")[[1]])
     },
+
     get_study = function(study_id) {
       con <- private$.con(); on.exit(DBI::dbDisconnect(con))
-      as.list(DBI::dbGetQuery(con,
+      s  <- as.list(DBI::dbGetQuery(con,
         "SELECT * FROM studies WHERE study_id = ?", list(study_id)))
+      ua <- DBI::dbGetQuery(con,
+        "SELECT key, value_json FROM study_user_attributes WHERE study_id = ?",
+        list(study_id))
+      s$user_attrs <- if (nrow(ua) > 0)
+        stats::setNames(lapply(ua$value_json, jsonlite::fromJSON), ua$key)
+      else list()
+      s
     },
+
+    set_study_user_attr = function(study_id, key, value) {
+      con <- private$.con(); on.exit(DBI::dbDisconnect(con))
+      DBI::dbExecute(con,
+        "INSERT OR REPLACE INTO study_user_attributes
+         (study_id, key, value_json) VALUES (?, ?, ?)",
+        list(study_id, key, jsonlite::toJSON(value, auto_unbox = TRUE)))
+    },
+
+    get_study_user_attrs = function(study_id) {
+      con <- private$.con(); on.exit(DBI::dbDisconnect(con))
+      ua <- DBI::dbGetQuery(con,
+        "SELECT key, value_json FROM study_user_attributes WHERE study_id = ?",
+        list(study_id))
+      if (nrow(ua) == 0) return(list())
+      stats::setNames(lapply(ua$value_json, jsonlite::fromJSON), ua$key)
+    },
+
+    find_study = function(study_name) {
+      con <- private$.con(); on.exit(DBI::dbDisconnect(con))
+      res <- DBI::dbGetQuery(con,
+        "SELECT study_id FROM studies WHERE study_name = ?", list(study_name))
+      if (nrow(res) == 0) return(NULL)
+      as.integer(res[[1, 1]])
+    },
+
     create_trial = function(study_id) {
       con <- private$.con(); on.exit(DBI::dbDisconnect(con))
       n <- DBI::dbGetQuery(con,
@@ -45,6 +80,7 @@ SqliteStorage <- R6::R6Class("SqliteStorage",
         list(n, study_id, format(Sys.time())))
       as.integer(DBI::dbGetQuery(con, "SELECT last_insert_rowid()")[[1]])
     },
+
     set_trial_state = function(study_id, trial_id, state,
                                value = NULL, datetime_complete = NULL) {
       con <- private$.con(); on.exit(DBI::dbDisconnect(con))
@@ -58,14 +94,23 @@ SqliteStorage <- R6::R6Class("SqliteStorage",
           list(state, trial_id))
       }
     },
+
     set_trial_param = function(study_id, trial_id, param_name, distribution, value) {
       con <- private$.con(); on.exit(DBI::dbDisconnect(con))
       dj <- jsonlite::toJSON(dist_to_list(distribution), auto_unbox = TRUE)
+      # Categorical values stored as 0-based index to keep internal_value column numeric.
+      # Matches Python Optuna's internal_value convention for CategoricalDistribution.
+      internal_val <- if (inherits(distribution, "roptuna_categorical_distribution")) {
+        match(value, distribution$choices) - 1L
+      } else {
+        value
+      }
       DBI::dbExecute(con,
         "INSERT OR REPLACE INTO trial_params
          (trial_id, param_name, internal_value, distribution_json) VALUES (?,?,?,?)",
-        list(trial_id, param_name, value, dj))
+        list(trial_id, param_name, internal_val, dj))
     },
+
     set_trial_intermediate_value = function(study_id, trial_id, step, value) {
       con <- private$.con(); on.exit(DBI::dbDisconnect(con))
       DBI::dbExecute(con,
@@ -73,16 +118,19 @@ SqliteStorage <- R6::R6Class("SqliteStorage",
          (trial_id, step, intermediate_value) VALUES (?,?,?)",
         list(trial_id, as.integer(step), value))
     },
+
     set_trial_user_attr = function(study_id, trial_id, key_name, value) {
       con <- private$.con(); on.exit(DBI::dbDisconnect(con))
       DBI::dbExecute(con,
         "INSERT OR REPLACE INTO trial_user_attributes (trial_id, key, value_json) VALUES (?,?,?)",
         list(trial_id, key_name, jsonlite::toJSON(value, auto_unbox = TRUE)))
     },
+
     get_trial = function(study_id, trial_id) {
       con <- private$.con(); on.exit(DBI::dbDisconnect(con))
       private$.load_trial(con, study_id, trial_id)
     },
+
     get_all_trials = function(study_id, states = NULL) {
       con <- private$.con(); on.exit(DBI::dbDisconnect(con))
       if (is.null(states)) {
@@ -95,24 +143,22 @@ SqliteStorage <- R6::R6Class("SqliteStorage",
           c(list(study_id), as.list(states)))
       }
       lapply(rows$trial_id, function(tid) private$.load_trial(con, study_id, tid))
-    },
-
-    find_study = function(study_name) {
-      con <- private$.con(); on.exit(DBI::dbDisconnect(con))
-      res <- DBI::dbGetQuery(con,
-        "SELECT study_id FROM studies WHERE study_name = ?", list(study_name))
-      if (nrow(res) == 0) return(NULL)
-      as.integer(res[[1, 1]])
     }
   ),
+
   private = list(
     .path = NULL,
     .con  = function() DBI::dbConnect(RSQLite::SQLite(), private$.path),
+
     .init_schema = function(con) {
       DBI::dbExecute(con, "PRAGMA journal_mode=WAL")
       DBI::dbExecute(con, "CREATE TABLE IF NOT EXISTS studies (
         study_id INTEGER PRIMARY KEY AUTOINCREMENT,
         study_name TEXT UNIQUE NOT NULL, direction TEXT NOT NULL)")
+      DBI::dbExecute(con, "CREATE TABLE IF NOT EXISTS study_user_attributes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        study_id INTEGER NOT NULL, key TEXT NOT NULL,
+        value_json TEXT NOT NULL, UNIQUE(study_id, key))")
       DBI::dbExecute(con, "CREATE TABLE IF NOT EXISTS trials (
         trial_id INTEGER PRIMARY KEY AUTOINCREMENT,
         number INTEGER NOT NULL, study_id INTEGER NOT NULL,
@@ -132,6 +178,7 @@ SqliteStorage <- R6::R6Class("SqliteStorage",
         trial_id INTEGER NOT NULL, key TEXT NOT NULL,
         value_json TEXT NOT NULL, UNIQUE(trial_id, key))")
     },
+
     .load_trial = function(con, study_id, trial_id) {
       tr <- DBI::dbGetQuery(con,
         "SELECT * FROM trials WHERE trial_id=?", list(trial_id))
@@ -144,7 +191,19 @@ SqliteStorage <- R6::R6Class("SqliteStorage",
       list(
         trial_id  = trial_id, number = tr$number, study_id = study_id,
         state = tr$state, value = tr$value,
-        params = if (nrow(pr) > 0) stats::setNames(as.list(pr$internal_value), pr$param_name) else list(),
+        params = if (nrow(pr) > 0) {
+          dists_parsed <- lapply(pr$distribution_json,
+                                 function(j) dist_from_list(jsonlite::fromJSON(j)))
+          typed <- mapply(function(raw, dist) {
+            if (inherits(dist, "roptuna_categorical_distribution"))
+              dist$choices[[as.integer(raw) + 1L]]
+            else if (inherits(dist, "roptuna_int_distribution"))
+              as.integer(raw)
+            else
+              as.numeric(raw)
+          }, pr$internal_value, dists_parsed, SIMPLIFY = FALSE)
+          stats::setNames(typed, pr$param_name)
+        } else list(),
         distributions = if (nrow(pr) > 0)
           stats::setNames(lapply(pr$distribution_json, function(j)
             dist_from_list(jsonlite::fromJSON(j))), pr$param_name) else list(),
@@ -153,7 +212,7 @@ SqliteStorage <- R6::R6Class("SqliteStorage",
           stats::setNames(numeric(0), character(0)),
         user_attrs = if (nrow(ua) > 0)
           stats::setNames(lapply(ua$value_json, jsonlite::fromJSON), ua$key) else list(),
-        datetime_start = tr$datetime_start,
+        datetime_start    = tr$datetime_start,
         datetime_complete = tr$datetime_complete
       )
     }

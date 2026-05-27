@@ -17,6 +17,8 @@ storage <- InMemoryStorage$new()
 \item \href{#method-InMemoryStorage-new}{\code{InMemoryStorage$new()}}
 \item \href{#method-InMemoryStorage-create_study}{\code{InMemoryStorage$create_study()}}
 \item \href{#method-InMemoryStorage-get_study}{\code{InMemoryStorage$get_study()}}
+\item \href{#method-InMemoryStorage-set_study_user_attr}{\code{InMemoryStorage$set_study_user_attr()}}
+\item \href{#method-InMemoryStorage-get_study_user_attrs}{\code{InMemoryStorage$get_study_user_attrs()}}
 \item \href{#method-InMemoryStorage-create_trial}{\code{InMemoryStorage$create_trial()}}
 \item \href{#method-InMemoryStorage-set_trial_state}{\code{InMemoryStorage$set_trial_state()}}
 \item \href{#method-InMemoryStorage-set_trial_param}{\code{InMemoryStorage$set_trial_param()}}
@@ -24,6 +26,7 @@ storage <- InMemoryStorage$new()
 \item \href{#method-InMemoryStorage-set_trial_user_attr}{\code{InMemoryStorage$set_trial_user_attr()}}
 \item \href{#method-InMemoryStorage-get_trial}{\code{InMemoryStorage$get_trial()}}
 \item \href{#method-InMemoryStorage-get_all_trials}{\code{InMemoryStorage$get_all_trials()}}
+\item \href{#method-InMemoryStorage-find_study}{\code{InMemoryStorage$find_study()}}
 \item \href{#method-InMemoryStorage-clone}{\code{InMemoryStorage$clone()}}
 }
 }
@@ -51,6 +54,24 @@ storage <- InMemoryStorage$new()
 \subsection{Method \code{get_study()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InMemoryStorage$get_study(study_id)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InMemoryStorage-set_study_user_attr"></a>}}
+\if{latex}{\out{\hypertarget{method-InMemoryStorage-set_study_user_attr}{}}}
+\subsection{Method \code{set_study_user_attr()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InMemoryStorage$set_study_user_attr(study_id, key, value)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InMemoryStorage-get_study_user_attrs"></a>}}
+\if{latex}{\out{\hypertarget{method-InMemoryStorage-get_study_user_attrs}{}}}
+\subsection{Method \code{get_study_user_attrs()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InMemoryStorage$get_study_user_attrs(study_id)}\if{html}{\out{</div>}}
 }
 
 }
@@ -126,6 +147,15 @@ storage <- InMemoryStorage$new()
 \subsection{Method \code{get_all_trials()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InMemoryStorage$get_all_trials(study_id, states = NULL)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InMemoryStorage-find_study"></a>}}
+\if{latex}{\out{\hypertarget{method-InMemoryStorage-find_study}{}}}
+\subsection{Method \code{find_study()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InMemoryStorage$find_study(study_name)}\if{html}{\out{</div>}}
 }
 
 }

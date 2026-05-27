@@ -5,10 +5,11 @@
 InMemoryStorage <- R6::R6Class("InMemoryStorage",
   public = list(
     initialize = function() {
-      private$.studies        <- list()
-      private$.trials         <- list()
-      private$.study_counter  <- 0L
-      private$.trial_counters <- list()
+      private$.studies          <- list()
+      private$.trials           <- list()
+      private$.study_counter    <- 0L
+      private$.trial_counters   <- list()
+      private$.study_user_attrs <- list()
     },
 
     create_study = function(study_name, direction) {
@@ -19,12 +20,23 @@ InMemoryStorage <- R6::R6Class("InMemoryStorage",
         study_name = study_name,
         direction  = direction
       )
-      private$.trial_counters[[as.character(sid)]] <- 0L
+      private$.trial_counters[[as.character(sid)]]   <- 0L
+      private$.study_user_attrs[[as.character(sid)]] <- list()
       sid
     },
 
     get_study = function(study_id) {
-      private$.studies[[as.character(study_id)]]
+      s <- private$.studies[[as.character(study_id)]]
+      s$user_attrs <- private$.study_user_attrs[[as.character(study_id)]] %||% list()
+      s
+    },
+
+    set_study_user_attr = function(study_id, key, value) {
+      private$.study_user_attrs[[as.character(study_id)]][[key]] <- value
+    },
+
+    get_study_user_attrs = function(study_id) {
+      private$.study_user_attrs[[as.character(study_id)]] %||% list()
     },
 
     create_trial = function(study_id) {
@@ -99,9 +111,10 @@ InMemoryStorage <- R6::R6Class("InMemoryStorage",
     }
   ),
   private = list(
-    .studies        = NULL,
-    .trials         = NULL,
-    .study_counter  = NULL,
-    .trial_counters = NULL
+    .studies          = NULL,
+    .trials           = NULL,
+    .study_counter    = NULL,
+    .trial_counters   = NULL,
+    .study_user_attrs = NULL
   )
 )

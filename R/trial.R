@@ -33,14 +33,26 @@ Trial <- R6::R6Class("Trial",
       private$.suggest(name, float_distribution(low, high, log = log, step = step))
     },
 
+    #' @description Suggest a float (alias for suggest_float, for compatibility).
+    suggest_uniform = function(name, low, high) {
+      self$suggest_float(name, low, high)
+    },
+
     #' @description Suggest a float in log-uniform space.
     suggest_log_uniform = function(name, low, high) {
       self$suggest_float(name, low, high, log = TRUE)
     },
 
     #' @description Suggest an integer hyperparameter.
-    suggest_int = function(name, low, high) {
-      private$.suggest(name, int_distribution(as.integer(low), as.integer(high)))
+    #' @param name Parameter name.
+    #' @param low Lower bound (inclusive).
+    #' @param high Upper bound (inclusive).
+    #' @param log If TRUE, sample in log space (both bounds must be positive).
+    #' @param step Step size between valid integers (default 1).
+    suggest_int = function(name, low, high, log = FALSE, step = 1L) {
+      private$.suggest(name,
+        int_distribution(as.integer(low), as.integer(high),
+                         log = log, step = as.integer(step)))
     },
 
     #' @description Suggest a categorical hyperparameter.
@@ -76,6 +88,24 @@ Trial <- R6::R6Class("Trial",
       private$.storage$get_trial(
         private$.study_id, private$.trial_id
       )$params
+    },
+    #' @field distributions Named list of distributions for suggested parameters.
+    distributions = function() {
+      private$.storage$get_trial(
+        private$.study_id, private$.trial_id
+      )$distributions
+    },
+    #' @field intermediate_values Named list of reported intermediate values.
+    intermediate_values = function() {
+      private$.storage$get_trial(
+        private$.study_id, private$.trial_id
+      )$intermediate_values
+    },
+    #' @field user_attrs Named list of user attributes set on this trial.
+    user_attrs = function() {
+      private$.storage$get_trial(
+        private$.study_id, private$.trial_id
+      )$user_attrs
     }
   ),
 

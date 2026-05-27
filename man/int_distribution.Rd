@@ -4,12 +4,16 @@
 \alias{int_distribution}
 \title{Create an integer distribution}
 \usage{
-int_distribution(low, high)
+int_distribution(low, high, log = FALSE, step = 1L)
 }
 \arguments{
 \item{low}{Lower bound (inclusive).}
 
 \item{high}{Upper bound (inclusive).}
+
+\item{log}{If TRUE, sample in log space. Both bounds must be positive integers.}
+
+\item{step}{Step size between valid integers (default 1).}
 }
 \value{
 An S3 object of class \code{roptuna_int_distribution}.
@@ -19,4 +23,5 @@ Create an integer distribution
 }
 \examples{
 int_distribution(1L, 10L)
+int_distribution(32L, 256L, step = 32L)
 }

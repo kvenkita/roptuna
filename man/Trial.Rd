@@ -31,6 +31,12 @@ study$optimize(function(trial) {
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
 \item{\code{params}}{Named list of all suggested parameter values so far.}
+
+\item{\code{distributions}}{Named list of distributions for suggested parameters.}
+
+\item{\code{intermediate_values}}{Named list of reported intermediate values.}
+
+\item{\code{user_attrs}}{Named list of user attributes set on this trial.}
 }
 \if{html}{\out{</div>}}
 }
@@ -39,6 +45,7 @@ study$optimize(function(trial) {
 \itemize{
 \item \href{#method-Trial-new}{\code{Trial$new()}}
 \item \href{#method-Trial-suggest_float}{\code{Trial$suggest_float()}}
+\item \href{#method-Trial-suggest_uniform}{\code{Trial$suggest_uniform()}}
 \item \href{#method-Trial-suggest_log_uniform}{\code{Trial$suggest_log_uniform()}}
 \item \href{#method-Trial-suggest_int}{\code{Trial$suggest_int()}}
 \item \href{#method-Trial-suggest_categorical}{\code{Trial$suggest_categorical()}}
@@ -68,6 +75,16 @@ Suggest a float hyperparameter.
 
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Trial-suggest_uniform"></a>}}
+\if{latex}{\out{\hypertarget{method-Trial-suggest_uniform}{}}}
+\subsection{Method \code{suggest_uniform()}}{
+Suggest a float (alias for suggest_float, for compatibility).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Trial$suggest_uniform(name, low, high)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Trial-suggest_log_uniform"></a>}}
 \if{latex}{\out{\hypertarget{method-Trial-suggest_log_uniform}{}}}
 \subsection{Method \code{suggest_log_uniform()}}{
@@ -83,9 +100,24 @@ Suggest a float in log-uniform space.
 \subsection{Method \code{suggest_int()}}{
 Suggest an integer hyperparameter.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Trial$suggest_int(name, low, high)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Trial$suggest_int(name, low, high, log = FALSE, step = 1L)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{name}}{Parameter name.}
+
+\item{\code{low}}{Lower bound (inclusive).}
+
+\item{\code{high}}{Upper bound (inclusive).}
+
+\item{\code{log}}{If TRUE, sample in log space (both bounds must be positive).}
+
+\item{\code{step}}{Step size between valid integers (default 1).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Trial-suggest_categorical"></a>}}

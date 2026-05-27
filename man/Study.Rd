@@ -21,6 +21,12 @@ study$best_value
 \itemize{
 \item \href{#method-Study-new}{\code{Study$new()}}
 \item \href{#method-Study-optimize}{\code{Study$optimize()}}
+\item \href{#method-Study-stop}{\code{Study$stop()}}
+\item \href{#method-Study-set_user_attr}{\code{Study$set_user_attr()}}
+\item \href{#method-Study-enqueue_trial}{\code{Study$enqueue_trial()}}
+\item \href{#method-Study-add_trial}{\code{Study$add_trial()}}
+\item \href{#method-Study-add_trials}{\code{Study$add_trials()}}
+\item \href{#method-Study-trials_dataframe}{\code{Study$trials_dataframe()}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -38,7 +44,115 @@ study$best_value
 \subsection{Method \code{optimize()}}{
 Run the objective function for n_trials iterations.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Study$optimize(func, n_trials = 100, timeout = NULL, catch = character())}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Study$optimize(
+  func,
+  n_trials = 100,
+  timeout = NULL,
+  catch = character(),
+  callbacks = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{func}}{Objective function taking a Trial and returning a numeric scalar.}
+
+\item{\code{n_trials}}{Number of trials to run.}
+
+\item{\code{timeout}}{Wall-clock timeout in seconds (NULL = no limit).}
+
+\item{\code{catch}}{Character vector of additional condition classes to catch as failed trials.}
+
+\item{\code{callbacks}}{List of functions \verb{function(study, trial_snapshot)} called after each trial.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Study-stop"></a>}}
+\if{latex}{\out{\hypertarget{method-Study-stop}{}}}
+\subsection{Method \code{stop()}}{
+Signal the optimize loop to stop after the current trial.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Study$stop()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Study-set_user_attr"></a>}}
+\if{latex}{\out{\hypertarget{method-Study-set_user_attr}{}}}
+\subsection{Method \code{set_user_attr()}}{
+Set a user attribute on the study.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Study$set_user_attr(key, value)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Study-enqueue_trial"></a>}}
+\if{latex}{\out{\hypertarget{method-Study-enqueue_trial}{}}}
+\subsection{Method \code{enqueue_trial()}}{
+Queue a trial with fixed parameter values.
+The next call to optimize() will use these values instead of sampling.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Study$enqueue_trial(params)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{params}}{Named list of parameter name -> value.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Study-add_trial"></a>}}
+\if{latex}{\out{\hypertarget{method-Study-add_trial}{}}}
+\subsection{Method \code{add_trial()}}{
+Add a completed (or failed/pruned) trial directly to the study.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Study$add_trial(trial_info)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{trial_info}}{Named list with: \code{params} (named list), \code{value} (numeric),
+and optionally \code{state} ("complete"), \code{distributions} (named list),
+\code{user_attrs} (named list), \code{intermediate_values} (named numeric).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Study-add_trials"></a>}}
+\if{latex}{\out{\hypertarget{method-Study-add_trials}{}}}
+\subsection{Method \code{add_trials()}}{
+Add multiple trials at once. See \code{\link[=add_trial]{add_trial()}}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Study$add_trials(trial_list)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{trial_list}}{List of trial_info lists.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Study-trials_dataframe"></a>}}
+\if{latex}{\out{\hypertarget{method-Study-trials_dataframe}{}}}
+\subsection{Method \code{trials_dataframe()}}{
+Return all trials as a data frame with one row per trial.
+Columns: number, value, state, datetime_start, datetime_complete,
+plus \verb{params_<name>} for every hyperparameter and
+\verb{user_attrs_<name>} for every user attribute.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Study$trials_dataframe()}\if{html}{\out{</div>}}
 }
 
 }

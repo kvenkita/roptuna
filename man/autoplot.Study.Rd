@@ -4,12 +4,16 @@
 \alias{autoplot.Study}
 \title{Plot an roptuna study}
 \usage{
-\method{autoplot}{Study}(object, type = "history", ...)
+\method{autoplot}{Study}(object, type = "history", params = NULL, ...)
 }
 \arguments{
 \item{object}{A \code{Study} R6 object.}
 
-\item{type}{One of \code{"history"}, \code{"parallel_coordinate"}, \code{"param_importance"}.}
+\item{type}{One of \code{"history"}, \code{"parallel_coordinate"}, \code{"param_importance"},
+\code{"intermediate_values"}, \code{"contour"}, \code{"slice"}, \code{"edf"}.}
+
+\item{params}{For \code{"contour"}: character vector of exactly two parameter names.
+For \code{"slice"}: character vector of parameter names to include (default: all).}
 
 \item{...}{Unused.}
 }

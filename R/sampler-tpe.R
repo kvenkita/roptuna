@@ -22,9 +22,17 @@ TpeSampler <- R6::R6Class("TpeSampler",
       private$.n_ei_candidates <- n_ei_candidates
       private$.random          <- RandomSampler$new()
     },
+
     sample_independent = function(study, trial, param_name, distribution) {
-      dist_sample_random(distribution)
+      completed <- study$storage_ref$get_all_trials(study$study_id, states = "complete")
+      relevant  <- Filter(function(t) !is.null(t$params[[param_name]]), completed)
+
+      if (length(relevant) < private$.n_startup)
+        return(dist_sample_random(distribution))
+
+      private$.tpe_sample_one(study, completed, param_name, distribution)
     },
+
     infer_relative_search_space = function(study, trial) {
       completed <- study$storage_ref$get_all_trials(study$study_id, states = "complete")
       if (length(completed) == 0) return(list())
@@ -34,55 +42,84 @@ TpeSampler <- R6::R6Class("TpeSampler",
           if (is.null(dists[[pname]])) dists[[pname]] <- t$distributions[[pname]]
       dists
     },
+
     sample_relative = function(study, trial, distributions, search_space) {
       completed <- study$storage_ref$get_all_trials(study$study_id, states = "complete")
       if (length(completed) < private$.n_startup || length(distributions) == 0)
         return(private$.random$sample_relative(study, trial, distributions, search_space))
 
-      vals <- sapply(completed, `[[`, "value")
+      result <- list()
+      for (pname in names(distributions)) {
+        result[[pname]] <- private$.tpe_sample_one(
+          study, completed, pname, distributions[[pname]])
+      }
+      result
+    }
+  ),
+
+  private = list(
+    .n_startup = NULL, .gamma = NULL, .n_ei_candidates = NULL, .random = NULL,
+
+    .split_trials = function(study, completed) {
+      vals    <- sapply(completed, `[[`, "value")
       n_below <- max(1L, as.integer(floor(private$.gamma * length(completed))))
       if (study$direction == "minimize") {
         below_idx <- order(vals)[seq_len(n_below)]
       } else {
         below_idx <- order(vals, decreasing = TRUE)[seq_len(n_below)]
       }
-      above_idx <- setdiff(seq_along(completed), below_idx)
-      below_trials <- completed[below_idx]
-      above_trials <- completed[above_idx]
+      list(
+        below = completed[below_idx],
+        above = completed[setdiff(seq_along(completed), below_idx)]
+      )
+    },
 
-      result <- list()
+    .tpe_sample_one = function(study, completed, pname, dist) {
+      split  <- private$.split_trials(study, completed)
+      bv     <- unlist(lapply(split$below, function(t) t$params[[pname]]))
+      av     <- unlist(lapply(split$above, function(t) t$params[[pname]]))
+      bv     <- bv[!sapply(bv, is.null)]
+      av     <- av[!sapply(av, is.null)]
       n_cand <- private$.n_ei_candidates
-      for (pname in names(distributions)) {
-        dist <- distributions[[pname]]
-        bv <- unlist(lapply(below_trials, function(t) t$params[[pname]]))
-        av <- unlist(lapply(above_trials, function(t) t$params[[pname]]))
 
-        if (inherits(dist, "roptuna_float_distribution")) {
-          l <- .build_parzen(bv, dist$low, dist$high, dist$log)
-          g <- .build_parzen(av, dist$low, dist$high, dist$log)
-          cands <- .sample_parzen(l, n_cand)
-          result[[pname]] <- cands[which.max(.eval_parzen(l, cands) - .eval_parzen(g, cands))]
+      if (inherits(dist, "roptuna_float_distribution")) {
+        l <- .build_parzen(bv, dist$low, dist$high, dist$log)
+        g <- .build_parzen(av, dist$low, dist$high, dist$log)
+        cands <- .sample_parzen(l, n_cand)
+        cands[which.max(.eval_parzen(l, cands) - .eval_parzen(g, cands))]
 
-        } else if (inherits(dist, "roptuna_int_distribution")) {
-          l <- .build_parzen(bv, dist$low - 0.5, dist$high + 0.5, FALSE)
-          g <- .build_parzen(av, dist$low - 0.5, dist$high + 0.5, FALSE)
-          cands <- pmax(pmin(round(.sample_parzen(l, n_cand)), dist$high), dist$low)
-          result[[pname]] <- as.integer(cands[which.max(
-            .eval_parzen(l, cands) - .eval_parzen(g, cands))])
-
+      } else if (inherits(dist, "roptuna_int_distribution")) {
+        use_log <- isTRUE(dist$log)
+        if (dist$step > 1L) {
+          # Treat stepped integers as categorical over valid values
+          valid <- seq(dist$low, dist$high, by = dist$step)
+          lw <- .cat_weights(bv, valid)
+          gw <- .cat_weights(av, valid)
+          cands_idx <- sample(seq_along(valid), n_cand, replace = TRUE, prob = lw)
+          best_idx  <- cands_idx[which.max(log(lw[cands_idx]) - log(gw[cands_idx]))]
+          as.integer(valid[best_idx])
         } else {
-          lw <- .cat_weights(bv, dist$choices)
-          gw <- .cat_weights(av, dist$choices)
-          cands <- sample(dist$choices, n_cand, replace = TRUE, prob = lw)
-          idx <- match(cands, dist$choices)
-          result[[pname]] <- cands[which.max(log(lw[idx]) - log(gw[idx]))]
+          low_c  <- if (use_log) log(dist$low) else dist$low - 0.5
+          high_c <- if (use_log) log(dist$high) else dist$high + 0.5
+          bv_t   <- if (use_log && length(bv) > 0) log(bv) else bv
+          av_t   <- if (use_log && length(av) > 0) log(av) else av
+          l <- .build_parzen(bv_t, low_c, high_c, FALSE)
+          g <- .build_parzen(av_t, low_c, high_c, FALSE)
+          raw <- .sample_parzen(l, n_cand)
+          if (use_log) raw <- exp(raw)
+          cands <- pmax(pmin(as.integer(round(raw)), dist$high), dist$low)
+          as.integer(cands[which.max(.eval_parzen(l, if (use_log) log(cands) else cands) -
+                                    .eval_parzen(g, if (use_log) log(cands) else cands))])
         }
+      } else {
+        lw <- .cat_weights(bv, dist$choices)
+        gw <- .cat_weights(av, dist$choices)
+        cands <- sample(dist$choices, n_cand, replace = TRUE, prob = lw)
+        idx   <- match(cands, dist$choices)
+        cands[which.max(log(lw[idx]) - log(gw[idx]))]
       }
-      result
     }
-  ),
-  private = list(.n_startup = NULL, .gamma = NULL,
-                 .n_ei_candidates = NULL, .random = NULL)
+  )
 )
 
 .build_parzen <- function(obs, low, high, log_scale) {
@@ -117,7 +154,6 @@ TpeSampler <- R6::R6Class("TpeSampler",
 .eval_parzen <- function(est, x) {
   xt <- if (est$log) log(x) else x
   log_w <- log(est$weights)
-  # Build matrix by index to avoid match() returning wrong index for duplicate means.
   log_p <- matrix(nrow = length(est$means), ncol = length(xt))
   for (i in seq_along(est$means))
     log_p[i, ] <- log_w[i] + stats::dnorm(xt, est$means[i], est$sigmas[i], log = TRUE)
