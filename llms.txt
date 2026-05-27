@@ -56,6 +56,14 @@ A Next-generation Hyperparameter Optimization Framework. *KDD 2019*.
   : Create a grid sampler
 - [`tpe_sampler()`](https://kvenkita.github.io/roptuna/reference/tpe_sampler.md)
   : Create a TPE sampler
+- [`cmaes_sampler()`](https://kvenkita.github.io/roptuna/reference/cmaes_sampler.md)
+  : Create a CMA-ES sampler for continuous optimization
+- [`CmaEsSampler`](https://kvenkita.github.io/roptuna/reference/CmaEsSampler.md)
+  : CMA-ES sampler R6 class
+- [`nsgaii_sampler()`](https://kvenkita.github.io/roptuna/reference/nsgaii_sampler.md)
+  : Create an NSGA-II sampler for multi-objective optimization
+- [`NSGAIISampler`](https://kvenkita.github.io/roptuna/reference/NSGAIISampler.md)
+  : NSGA-II sampler R6 class
 
 ## Pruners
 
@@ -63,6 +71,20 @@ A Next-generation Hyperparameter Optimization Framework. *KDD 2019*.
   : Create a median pruner
 - [`successive_halving_pruner()`](https://kvenkita.github.io/roptuna/reference/successive_halving_pruner.md)
   : Create a successive halving (ASHA) pruner
+- [`hyperband_pruner()`](https://kvenkita.github.io/roptuna/reference/hyperband_pruner.md)
+  : Create a Hyperband pruner
+- [`HyperbandPruner`](https://kvenkita.github.io/roptuna/reference/HyperbandPruner.md)
+  : Hyperband pruner R6 class
+- [`wilcoxon_pruner()`](https://kvenkita.github.io/roptuna/reference/wilcoxon_pruner.md)
+  : Create a Wilcoxon pruner
+- [`WilcoxonPruner`](https://kvenkita.github.io/roptuna/reference/WilcoxonPruner.md)
+  : Wilcoxon pruner R6 class
+- [`percentile_pruner()`](https://kvenkita.github.io/roptuna/reference/percentile_pruner.md)
+  : Create a percentile pruner
+- [`threshold_pruner()`](https://kvenkita.github.io/roptuna/reference/threshold_pruner.md)
+  : Create a threshold pruner
+- [`patient_pruner()`](https://kvenkita.github.io/roptuna/reference/patient_pruner.md)
+  : Create a patient pruner
 - [`stop_prune()`](https://kvenkita.github.io/roptuna/reference/stop_prune.md)
   : Signal that the current trial should be pruned
 
@@ -72,6 +94,10 @@ A Next-generation Hyperparameter Optimization Framework. *KDD 2019*.
   : SQLite storage backend (schema matches Python Optuna)
 - [`SqliteStorage`](https://kvenkita.github.io/roptuna/reference/SqliteStorage.md)
   : SQLite storage R6 class (schema matches Python Optuna)
+- [`journal_storage()`](https://kvenkita.github.io/roptuna/reference/journal_storage.md)
+  : Create a file-based journal storage backend
+- [`JournalStorage`](https://kvenkita.github.io/roptuna/reference/JournalStorage.md)
+  : Journal storage R6 class (file-based, append-only)
 - [`InMemoryStorage`](https://kvenkita.github.io/roptuna/reference/InMemoryStorage.md)
   : In-memory storage backend for roptuna studies
 

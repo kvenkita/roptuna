@@ -14,9 +14,17 @@ In-memory storage backend for roptuna studies
 
 - [`InMemoryStorage$get_study()`](#method-InMemoryStorage-get_study)
 
+- [`InMemoryStorage$get_study_directions()`](#method-InMemoryStorage-get_study_directions)
+
+- [`InMemoryStorage$set_study_user_attr()`](#method-InMemoryStorage-set_study_user_attr)
+
+- [`InMemoryStorage$get_study_user_attrs()`](#method-InMemoryStorage-get_study_user_attrs)
+
 - [`InMemoryStorage$create_trial()`](#method-InMemoryStorage-create_trial)
 
 - [`InMemoryStorage$set_trial_state()`](#method-InMemoryStorage-set_trial_state)
+
+- [`InMemoryStorage$set_trial_values()`](#method-InMemoryStorage-set_trial_values)
 
 - [`InMemoryStorage$set_trial_param()`](#method-InMemoryStorage-set_trial_param)
 
@@ -27,6 +35,8 @@ In-memory storage backend for roptuna studies
 - [`InMemoryStorage$get_trial()`](#method-InMemoryStorage-get_trial)
 
 - [`InMemoryStorage$get_all_trials()`](#method-InMemoryStorage-get_all_trials)
+
+- [`InMemoryStorage$find_study()`](#method-InMemoryStorage-find_study)
 
 - [`InMemoryStorage$clone()`](#method-InMemoryStorage-clone)
 
@@ -44,7 +54,7 @@ In-memory storage backend for roptuna studies
 
 #### Usage
 
-    InMemoryStorage$create_study(study_name, direction)
+    InMemoryStorage$create_study(study_name, direction, directions = NULL)
 
 ------------------------------------------------------------------------
 
@@ -53,6 +63,30 @@ In-memory storage backend for roptuna studies
 #### Usage
 
     InMemoryStorage$get_study(study_id)
+
+------------------------------------------------------------------------
+
+### Method `get_study_directions()`
+
+#### Usage
+
+    InMemoryStorage$get_study_directions(study_id)
+
+------------------------------------------------------------------------
+
+### Method `set_study_user_attr()`
+
+#### Usage
+
+    InMemoryStorage$set_study_user_attr(study_id, key, value)
+
+------------------------------------------------------------------------
+
+### Method `get_study_user_attrs()`
+
+#### Usage
+
+    InMemoryStorage$get_study_user_attrs(study_id)
 
 ------------------------------------------------------------------------
 
@@ -75,6 +109,14 @@ In-memory storage backend for roptuna studies
       value = NULL,
       datetime_complete = NULL
     )
+
+------------------------------------------------------------------------
+
+### Method `set_trial_values()`
+
+#### Usage
+
+    InMemoryStorage$set_trial_values(study_id, trial_id, values)
 
 ------------------------------------------------------------------------
 
@@ -121,6 +163,14 @@ In-memory storage backend for roptuna studies
 #### Usage
 
     InMemoryStorage$get_all_trials(study_id, states = NULL)
+
+------------------------------------------------------------------------
+
+### Method `find_study()`
+
+#### Usage
+
+    InMemoryStorage$find_study(study_name)
 
 ------------------------------------------------------------------------
 

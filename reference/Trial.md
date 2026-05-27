@@ -17,9 +17,25 @@ directly — always received as the argument to your objective function.
 
 ## Active bindings
 
+- `trial_id`:
+
+  Internal trial identifier.
+
 - `params`:
 
   Named list of all suggested parameter values so far.
+
+- `distributions`:
+
+  Named list of distributions for suggested parameters.
+
+- `intermediate_values`:
+
+  Named list of reported intermediate values.
+
+- `user_attrs`:
+
+  Named list of user attributes set on this trial.
 
 ## Methods
 
@@ -28,6 +44,8 @@ directly — always received as the argument to your objective function.
 - [`Trial$new()`](#method-Trial-new)
 
 - [`Trial$suggest_float()`](#method-Trial-suggest_float)
+
+- [`Trial$suggest_uniform()`](#method-Trial-suggest_uniform)
 
 - [`Trial$suggest_log_uniform()`](#method-Trial-suggest_log_uniform)
 
@@ -63,6 +81,16 @@ Suggest a float hyperparameter.
 
 ------------------------------------------------------------------------
 
+### Method `suggest_uniform()`
+
+Suggest a float (alias for suggest_float, for compatibility).
+
+#### Usage
+
+    Trial$suggest_uniform(name, low, high)
+
+------------------------------------------------------------------------
+
 ### Method `suggest_log_uniform()`
 
 Suggest a float in log-uniform space.
@@ -79,7 +107,29 @@ Suggest an integer hyperparameter.
 
 #### Usage
 
-    Trial$suggest_int(name, low, high)
+    Trial$suggest_int(name, low, high, log = FALSE, step = 1L)
+
+#### Arguments
+
+- `name`:
+
+  Parameter name.
+
+- `low`:
+
+  Lower bound (inclusive).
+
+- `high`:
+
+  Upper bound (inclusive).
+
+- `log`:
+
+  If TRUE, sample in log space (both bounds must be positive).
+
+- `step`:
+
+  Step size between valid integers (default 1).
 
 ------------------------------------------------------------------------
 

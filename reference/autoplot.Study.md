@@ -6,7 +6,7 @@ Plot an roptuna study
 
 ``` r
 # S3 method for class 'Study'
-autoplot(object, type = "history", ...)
+autoplot(object, type = "history", params = NULL, ...)
 ```
 
 ## Arguments
@@ -17,7 +17,14 @@ autoplot(object, type = "history", ...)
 
 - type:
 
-  One of `"history"`, `"parallel_coordinate"`, `"param_importance"`.
+  One of `"history"`, `"parallel_coordinate"`, `"param_importance"`,
+  `"intermediate_values"`, `"contour"`, `"slice"`, `"edf"`.
+
+- params:
+
+  For `"contour"`: character vector of exactly two parameter names. For
+  `"slice"`: character vector of parameter names to include (default:
+  all).
 
 - ...:
 

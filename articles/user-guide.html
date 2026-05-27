@@ -346,7 +346,8 @@ and <code>trial$suggest_categorical()</code>.</p>
 </h3>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">study</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span></span>
-<span>  direction      <span class="op">=</span> <span class="st">"minimize"</span>,    <span class="co"># or "maximize"</span></span>
+<span>  direction      <span class="op">=</span> <span class="st">"minimize"</span>,    <span class="co"># or "maximize" (single-objective)</span></span>
+<span>  directions     <span class="op">=</span> <span class="cn">NULL</span>,          <span class="co"># multi-objective: e.g. c("minimize", "maximize")</span></span>
 <span>  sampler        <span class="op">=</span> <span class="fu"><a href="../reference/tpe_sampler.html">tpe_sampler</a></span><span class="op">(</span><span class="op">)</span>, <span class="co"># sampling strategy; random_sampler() by default</span></span>
 <span>  pruner         <span class="op">=</span> <span class="cn">NULL</span>,          <span class="co"># early stopping (optional)</span></span>
 <span>  storage        <span class="op">=</span> <span class="cn">NULL</span>,          <span class="co"># InMemoryStorage by default</span></span>
@@ -481,6 +482,16 @@ log scale distributes exploration evenly across magnitudes.</p>
 <td><code>grid_sampler(search_space)</code></td>
 <td>Exhaustive small grids; all combinations required</td>
 </tr>
+<tr class="even">
+<td><strong>CMA-ES</strong></td>
+<td><code>cmaes_sampler(n_startup_trials, sigma0, seed)</code></td>
+<td>Continuous parameters; covariance-guided local search</td>
+</tr>
+<tr class="odd">
+<td><strong>NSGA-II</strong></td>
+<td><code>nsgaii_sampler(population_size, eta_c, eta_m, seed)</code></td>
+<td>Multi-objective studies</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -567,6 +578,42 @@ when ablating a small set of architectural choices.</p>
 <span><span class="co">#&gt; 1           50         3  0.31</span></span>
 <span><span class="co">#&gt; 4           50         5  0.31</span></span>
 <span><span class="co">#&gt; 7           50         7  0.33</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="cma-es-sampler">CMA-ES sampler<a class="anchor" aria-label="anchor" href="#cma-es-sampler"></a>
+</h3>
+<p>The <strong>CMA-ES</strong> (Covariance Matrix Adaptation Evolution
+Strategy) sampler fits a multivariate normal distribution over completed
+trial parameter vectors and adapts the distribution’s mean, covariance
+matrix, and step size every <em>λ</em> evaluations. It concentrates
+search along the principal axes of the objective landscape, which makes
+it particularly effective on <strong>ill-conditioned continuous
+surfaces</strong> — elongated valleys, ridges, or objectives where the
+parameters interact.</p>
+<p>CMA-ES applies only to <code>suggest_float()</code> parameters.
+Integer and categorical parameters fall back to independent sampling via
+TPE.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">study_cmaes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span><span class="st">"minimize"</span>,</span>
+<span>  sampler <span class="op">=</span> <span class="fu"><a href="../reference/cmaes_sampler.html">cmaes_sampler</a></span><span class="op">(</span>n_startup_trials <span class="op">=</span> <span class="fl">10L</span>, seed <span class="op">=</span> <span class="fl">42L</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">study_cmaes</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">x</span> <span class="op">&lt;-</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"x"</span>, <span class="op">-</span><span class="fl">5</span>, <span class="fl">5</span><span class="op">)</span></span>
+<span>  <span class="va">y</span> <span class="op">&lt;-</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"y"</span>, <span class="op">-</span><span class="fl">5</span>, <span class="fl">5</span><span class="op">)</span></span>
+<span>  <span class="co"># Rosenbrock function: narrow curved valley; notoriously hard for axis-aligned methods</span></span>
+<span>  <span class="fl">100</span> <span class="op">*</span> <span class="op">(</span><span class="va">y</span> <span class="op">-</span> <span class="va">x</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="va">x</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span></span>
+<span><span class="op">}</span>, n_trials <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Best value:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">study_cmaes</span><span class="op">$</span><span class="va">best_value</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Best value: 0.0566</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Best x:    "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">study_cmaes</span><span class="op">$</span><span class="va">best_params</span><span class="op">$</span><span class="va">x</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Best x:     0.7696</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Best y:    "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">study_cmaes</span><span class="op">$</span><span class="va">best_params</span><span class="op">$</span><span class="va">y</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Best y:     0.5863</span></span></code></pre></div>
+<p>The global minimum of the Rosenbrock function is 0 at (1, 1). CMA-ES
+locates it reliably because its covariance adaptation aligns the
+sampling ellipsoid with the curved valley, whereas TPE and random search
+would require far more trials to probe the narrow optimal region.</p>
 <hr>
 </div>
 </div>
@@ -583,7 +630,7 @@ its epochs, freeing compute for more promising candidates.</p>
 <p>Your objective function reports intermediate values with
 <code>trial$report()</code>, checks <code>trial$should_prune()</code>,
 and signals early termination with <code><a href="../reference/stop_prune.html">stop_prune()</a></code>.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">study_prune</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span></span>
 <span>  <span class="st">"minimize"</span>,</span>
 <span>  sampler <span class="op">=</span> <span class="fu"><a href="../reference/tpe_sampler.html">tpe_sampler</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span>,</span>
@@ -614,7 +661,7 @@ and signals early termination with <code><a href="../reference/stop_prune.html">
 with high loss early (low learning rate, slow convergence) are cut
 short, while trials that converge quickly (high learning rate) run to
 completion.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">traces</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Negate</a></span><span class="op">(</span><span class="va">is.null</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">study_prune</span><span class="op">$</span><span class="va">trials</span>, <span class="kw">function</span><span class="op">(</span><span class="va">t</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">iv</span> <span class="op">&lt;-</span> <span class="va">t</span><span class="op">$</span><span class="va">intermediate_values</span></span>
 <span>  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">iv</span><span class="op">)</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span> <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="cn">NULL</span><span class="op">)</span></span>
@@ -645,7 +692,7 @@ completion.</p>
 <p><img src="user-guide_files/figure-html/pruning-viz-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
-<h3 id="medianpruner-vs-successivehalvingpruner">MedianPruner vs SuccessiveHalvingPruner<a class="anchor" aria-label="anchor" href="#medianpruner-vs-successivehalvingpruner"></a>
+<h3 id="pruner-reference">Pruner reference<a class="anchor" aria-label="anchor" href="#pruner-reference"></a>
 </h3>
 <table class="table">
 <colgroup>
@@ -669,6 +716,32 @@ completion.</p>
 <td><code>successive_halving_pruner(min_resource, reduction_factor)</code></td>
 <td>Promote only the top 1/η fraction to the next resource rung</td>
 </tr>
+<tr class="odd">
+<td><strong>Hyperband</strong></td>
+<td><code>hyperband_pruner(min_resource, reduction_factor, n_brackets)</code></td>
+<td>Multi-bracket SHA; robust to budget misspecification</td>
+</tr>
+<tr class="even">
+<td><strong>Wilcoxon</strong></td>
+<td><code>wilcoxon_pruner(p_threshold, n_startup_trials)</code></td>
+<td>Non-parametric rank test vs completed trials at the same step</td>
+</tr>
+<tr class="odd">
+<td><strong>Percentile</strong></td>
+<td><code>percentile_pruner(percentile, n_startup_trials, n_warmup_steps)</code></td>
+<td>Prune if loss falls outside the top percentile</td>
+</tr>
+<tr class="even">
+<td><strong>Threshold</strong></td>
+<td><code>threshold_pruner(lower, upper, n_startup_trials, n_warmup_steps)</code></td>
+<td>Prune if loss exceeds a fixed absolute threshold</td>
+</tr>
+<tr class="odd">
+<td><strong>Patient</strong></td>
+<td><code>patient_pruner(wrapped_pruner, patience, min_delta)</code></td>
+<td>Suppress a base pruner until no improvement for
+<code>patience</code> steps</td>
+</tr>
 </tbody>
 </table>
 <p>The MedianPruner is the safer default: it requires relatively few
@@ -676,19 +749,310 @@ completed trials before activating and does not depend on a
 predetermined total budget. The SuccessiveHalvingPruner is more
 aggressive and works best when individual trials are long and you have a
 large overall evaluation budget.</p>
+</div>
+<div class="section level3">
+<h3 id="hyperbandpruner">HyperbandPruner<a class="anchor" aria-label="anchor" href="#hyperbandpruner"></a>
+</h3>
+<p>Hyperband (Li et al., 2017) removes the sensitivity of Successive
+Halving to the choice of <code>min_resource</code> by running
+<strong>multiple SHA brackets in parallel</strong>. Each new trial is
+assigned to a bracket by its trial index (round-robin), so the brackets
+operate at different resource rungs simultaneously without requiring you
+to pick one configuration upfront.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">study_hb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span></span>
+<span>  <span class="st">"minimize"</span>,</span>
+<span>  sampler <span class="op">=</span> <span class="fu"><a href="../reference/tpe_sampler.html">tpe_sampler</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span>,</span>
+<span>  pruner  <span class="op">=</span> <span class="fu"><a href="../reference/hyperband_pruner.html">hyperband_pruner</a></span><span class="op">(</span></span>
+<span>    min_resource            <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>    reduction_factor        <span class="op">=</span> <span class="fl">3L</span>,</span>
+<span>    min_early_stopping_rate <span class="op">=</span> <span class="fl">0L</span>,</span>
+<span>    n_brackets              <span class="op">=</span> <span class="fl">3L</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">study_hb</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">lr</span> <span class="op">&lt;-</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"lr"</span>, <span class="fl">1e-4</span>, <span class="fl">1e-1</span>, log <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span>  <span class="kw">for</span> <span class="op">(</span><span class="va">epoch</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fl">27</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">loss</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="op">-</span><span class="va">lr</span> <span class="op">*</span> <span class="va">epoch</span><span class="op">)</span> <span class="op">+</span> <span class="fl">0.1</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0.02</span><span class="op">)</span></span>
+<span>    <span class="va">trial</span><span class="op">$</span><span class="fu">report</span><span class="op">(</span><span class="va">loss</span>, step <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">epoch</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="kw">if</span> <span class="op">(</span><span class="va">trial</span><span class="op">$</span><span class="fu">should_prune</span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="../reference/stop_prune.html">stop_prune</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span>  <span class="va">loss</span></span>
+<span><span class="op">}</span>, n_trials <span class="op">=</span> <span class="fl">40</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"State distribution:\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; State distribution:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">study_hb</span><span class="op">$</span><span class="va">trials</span>, <span class="va">`[[`</span>, <span class="st">"state"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; complete   pruned </span></span>
+<span><span class="co">#&gt;        3       37</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="wilcoxonpruner">WilcoxonPruner<a class="anchor" aria-label="anchor" href="#wilcoxonpruner"></a>
+</h3>
+<p>The WilcoxonPruner applies a one-sided Wilcoxon rank-sum test at each
+step, comparing the current trial’s loss against all completed trials at
+the same step. The trial is pruned when the p-value falls below
+<code>p_threshold</code>, indicating with high statistical confidence
+that the current trial’s loss distribution is stochastically worse than
+existing trials.</p>
+<p>This pruner is more principled than a fixed-threshold rule and adapts
+automatically to the scale of the objective values.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">study_wx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span></span>
+<span>  <span class="st">"minimize"</span>,</span>
+<span>  sampler <span class="op">=</span> <span class="fu"><a href="../reference/tpe_sampler.html">tpe_sampler</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span>,</span>
+<span>  pruner  <span class="op">=</span> <span class="fu"><a href="../reference/wilcoxon_pruner.html">wilcoxon_pruner</a></span><span class="op">(</span>p_threshold <span class="op">=</span> <span class="fl">0.1</span>, n_startup_trials <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">study_wx</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">lr</span> <span class="op">&lt;-</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"lr"</span>, <span class="fl">1e-4</span>, <span class="fl">1e-1</span>, log <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span>  <span class="kw">for</span> <span class="op">(</span><span class="va">epoch</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fl">20</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">loss</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="op">-</span><span class="va">lr</span> <span class="op">*</span> <span class="va">epoch</span><span class="op">)</span> <span class="op">+</span> <span class="fl">0.1</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0.03</span><span class="op">)</span></span>
+<span>    <span class="va">trial</span><span class="op">$</span><span class="fu">report</span><span class="op">(</span><span class="va">loss</span>, step <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">epoch</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="kw">if</span> <span class="op">(</span><span class="va">trial</span><span class="op">$</span><span class="fu">should_prune</span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="../reference/stop_prune.html">stop_prune</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span>  <span class="va">loss</span></span>
+<span><span class="op">}</span>, n_trials <span class="op">=</span> <span class="fl">40</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"State distribution:\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; State distribution:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">study_wx</span><span class="op">$</span><span class="va">trials</span>, <span class="va">`[[`</span>, <span class="st">"state"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; complete   pruned </span></span>
+<span><span class="co">#&gt;       32        8</span></span></code></pre></div>
+<hr>
+</div>
+</div>
+<div class="section level2">
+<h2 id="multi-objective-optimization">Multi-Objective Optimization<a class="anchor" aria-label="anchor" href="#multi-objective-optimization"></a>
+</h2>
+<p>Many real problems require balancing competing objectives
+simultaneously — maximising model accuracy while minimising inference
+latency, or maximising R² while minimising model complexity.
+Single-objective optimisation collapses this trade-off into a scalar,
+which requires you to commit to a weighting before the search begins.
+Multi-objective optimisation instead explores the full <strong>Pareto
+front</strong>: the set of non-dominated solutions where no objective
+can be improved without worsening another.</p>
+<div class="section level3">
+<h3 id="creating-a-multi-objective-study">Creating a multi-objective study<a class="anchor" aria-label="anchor" href="#creating-a-multi-objective-study"></a>
+</h3>
+<p>Pass a character vector to <code>directions=</code> instead of a
+single string. Use <code><a href="../reference/nsgaii_sampler.html">nsgaii_sampler()</a></code>, which maintains
+population diversity along the front via non-dominated sorting and
+crowding distance selection.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">study_mo</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span></span>
+<span>  directions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"minimize"</span>, <span class="st">"minimize"</span><span class="op">)</span>,</span>
+<span>  sampler    <span class="op">=</span> <span class="fu"><a href="../reference/nsgaii_sampler.html">nsgaii_sampler</a></span><span class="op">(</span>population_size <span class="op">=</span> <span class="fl">30L</span>, seed <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">study_mo</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">x</span> <span class="op">&lt;-</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"x"</span>, <span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="va">y</span> <span class="op">&lt;-</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"y"</span>, <span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="co"># Objective 1: distance from (0, 0)  — prefers lower-left</span></span>
+<span>  <span class="co"># Objective 2: distance from (1, 1)  — prefers upper-right</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">x</span><span class="op">^</span><span class="fl">2</span> <span class="op">+</span> <span class="va">y</span><span class="op">^</span><span class="fl">2</span>, <span class="op">(</span><span class="va">x</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span> <span class="op">+</span> <span class="op">(</span><span class="va">y</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="op">}</span>, n_trials <span class="op">=</span> <span class="fl">90</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Total trials:          "</span>, <span class="va">study_mo</span><span class="op">$</span><span class="va">n_trials</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Total trials:           90</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Pareto-optimal trials: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">study_mo</span><span class="op">$</span><span class="va">best_trials</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Pareto-optimal trials:  27</span></span></code></pre></div>
+<p>The objective function returns a <strong>numeric vector</strong> —
+one element per direction. <code>study$best_trials</code> returns the
+non-dominated subset.</p>
+</div>
+<div class="section level3">
+<h3 id="inspecting-the-pareto-front">Inspecting the Pareto front<a class="anchor" aria-label="anchor" href="#inspecting-the-pareto-front"></a>
+</h3>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pareto</span> <span class="op">&lt;-</span> <span class="va">study_mo</span><span class="op">$</span><span class="va">best_trials</span></span>
+<span><span class="va">pareto_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">pareto</span>, <span class="kw">function</span><span class="op">(</span><span class="va">t</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>obj1 <span class="op">=</span> <span class="va">t</span><span class="op">$</span><span class="va">values</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, obj2 <span class="op">=</span> <span class="va">t</span><span class="op">$</span><span class="va">values</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">pareto_df</span> <span class="op">&lt;-</span> <span class="va">pareto_df</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">pareto_df</span><span class="op">$</span><span class="va">obj1</span><span class="op">)</span>, <span class="op">]</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Pareto front (obj1 = dist from (0,0), obj2 = dist from (1,1)):\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Pareto front (obj1 = dist from (0,0), obj2 = dist from (1,1)):</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">pareto_df</span>, <span class="fl">3</span><span class="op">)</span>, <span class="fl">8</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;     obj1  obj2</span></span>
+<span><span class="co">#&gt; 26 0.047 1.556</span></span>
+<span><span class="co">#&gt; 4  0.216 1.223</span></span>
+<span><span class="co">#&gt; 6  0.272 1.209</span></span>
+<span><span class="co">#&gt; 11 0.274 1.154</span></span>
+<span><span class="co">#&gt; 3  0.280 1.094</span></span>
+<span><span class="co">#&gt; 23 0.336 1.068</span></span>
+<span><span class="co">#&gt; 10 0.352 1.023</span></span>
+<span><span class="co">#&gt; 16 0.388 0.846</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="pareto-front-plot">Pareto front plot<a class="anchor" aria-label="anchor" href="#pareto-front-plot"></a>
+</h3>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">study_mo</span>, type <span class="op">=</span> <span class="st">"pareto_front"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    subtitle <span class="op">=</span> <span class="st">"Blue = Pareto-optimal (non-dominated); grey = dominated"</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>plot.title    <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>face <span class="op">=</span> <span class="st">"bold"</span><span class="op">)</span>,</span>
+<span>        plot.subtitle <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>colour <span class="op">=</span> <span class="st">"grey40"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="user-guide_files/figure-html/pareto-plot-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
+<p>The two objectives cannot both be minimised simultaneously: moving
+toward (0, 0) lowers obj1 but raises obj2, and vice versa. The Pareto
+front — the curved arc of non-dominated solutions — traces the efficient
+trade-off boundary between them.</p>
+<hr>
+</div>
+</div>
+<div class="section level2">
+<h2 id="decoupled-evaluation-with-ask-tell">Decoupled Evaluation with ask() / tell()<a class="anchor" aria-label="anchor" href="#decoupled-evaluation-with-ask-tell"></a>
+</h2>
+<p>The standard <code><a href="https://rdrr.io/r/stats/optimize.html" class="external-link">optimize()</a></code> loop samples parameters and
+evaluates the objective in a single synchronous cycle. The
+<code>ask()</code> / <code>tell()</code> API decouples these two steps,
+giving you explicit control over when trials are created and when their
+results are recorded. This is useful when:</p>
+<ul>
+<li>Your objective is evaluated by an <strong>external system</strong>
+(a remote API, a subprocess, a hardware device) that operates
+asynchronously.</li>
+<li>You need to <strong>inspect or transform</strong> the sampled
+parameters before submitting them to the evaluator.</li>
+<li>You want to run <strong>batched external evaluations</strong> and
+report results in bulk.</li>
+</ul>
+<div class="section level3">
+<h3 id="basic-usage">Basic usage<a class="anchor" aria-label="anchor" href="#basic-usage"></a>
+</h3>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">study_at</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span><span class="st">"minimize"</span>, sampler <span class="op">=</span> <span class="fu"><a href="../reference/tpe_sampler.html">tpe_sampler</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">42L</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fl">30</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">trial</span> <span class="op">&lt;-</span> <span class="va">study_at</span><span class="op">$</span><span class="fu">ask</span><span class="op">(</span><span class="op">)</span>                          <span class="co"># create trial, sample params</span></span>
+<span>  <span class="va">x</span>     <span class="op">&lt;-</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"x"</span>, <span class="op">-</span><span class="fl">5</span>, <span class="fl">5</span><span class="op">)</span>         <span class="co"># read sampled parameter</span></span>
+<span>  <span class="va">value</span> <span class="op">&lt;-</span> <span class="va">x</span><span class="op">^</span><span class="fl">2</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="fl">0.1</span><span class="op">)</span>                  <span class="co"># evaluate (could be external)</span></span>
+<span>  <span class="va">study_at</span><span class="op">$</span><span class="fu">tell</span><span class="op">(</span><span class="va">trial</span>, <span class="va">value</span><span class="op">)</span>                       <span class="co"># record result</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Best value:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">study_at</span><span class="op">$</span><span class="va">best_value</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Best value: -0.0994</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Best x:    "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">study_at</span><span class="op">$</span><span class="va">best_params</span><span class="op">$</span><span class="va">x</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Best x:     -0.2143</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="batched-external-evaluation">Batched external evaluation<a class="anchor" aria-label="anchor" href="#batched-external-evaluation"></a>
+</h3>
+<p>For systems that accept a batch of inputs and return results
+asynchronously, you can keep multiple open trials simultaneously:</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">study_batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span><span class="st">"minimize"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Sample 4 parameter sets at once</span></span>
+<span><span class="va">open_trials</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fl">4</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="va">study_batch</span><span class="op">$</span><span class="fu">ask</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">params</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">open_trials</span>, <span class="kw">function</span><span class="op">(</span><span class="va">t</span><span class="op">)</span> <span class="va">t</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"x"</span>, <span class="op">-</span><span class="fl">5</span>, <span class="fl">5</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># ... send params to external evaluator; wait for results ...</span></span>
+<span><span class="va">values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">params</span>, <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="va">x</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>  <span class="co"># placeholder: local evaluation</span></span>
+<span></span>
+<span><span class="co"># Record results (order does not matter)</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">open_trials</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">study_batch</span><span class="op">$</span><span class="fu">tell</span><span class="op">(</span><span class="va">open_trials</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span>, <span class="va">values</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<p><code>tell()</code> accepts an optional <code>state</code> argument
+(<code>"complete"</code> by default; also <code>"pruned"</code> or
+<code>"failed"</code>) for cases where the evaluation was cut short or
+failed.</p>
+<hr>
+</div>
+</div>
+<div class="section level2">
+<h2 id="parallel-trial-execution">Parallel Trial Execution<a class="anchor" aria-label="anchor" href="#parallel-trial-execution"></a>
+</h2>
+<p><code>study$optimize()</code> accepts an <code>n_jobs</code> argument
+that distributes trial evaluations across multiple R worker processes
+using the <code>parallel</code> package. This reduces wall-clock time
+when each trial takes seconds or minutes and the machine has multiple
+cores available.</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">study_par</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span><span class="st">"minimize"</span>, sampler <span class="op">=</span> <span class="fu"><a href="../reference/random_sampler.html">random_sampler</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">study_par</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span></span>
+<span>  <span class="kw">function</span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">x</span> <span class="op">&lt;-</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"x"</span>, <span class="op">-</span><span class="fl">5</span>, <span class="fl">5</span><span class="op">)</span></span>
+<span>    <span class="va">y</span> <span class="op">&lt;-</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"y"</span>, <span class="op">-</span><span class="fl">5</span>, <span class="fl">5</span><span class="op">)</span></span>
+<span>    <span class="va">x</span><span class="op">^</span><span class="fl">2</span> <span class="op">+</span> <span class="va">y</span><span class="op">^</span><span class="fl">2</span></span>
+<span>  <span class="op">}</span>,</span>
+<span>  n_trials <span class="op">=</span> <span class="fl">20L</span>,</span>
+<span>  n_jobs   <span class="op">=</span> <span class="fl">2L</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Completed trials:"</span>, <span class="va">study_par</span><span class="op">$</span><span class="va">n_trials</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Completed trials: 20</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Best value:      "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">study_par</span><span class="op">$</span><span class="va">best_value</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Best value:       1.6325</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="how-it-works">How it works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
+</h3>
+<ol style="list-style-type: decimal">
+<li>The <strong>main process</strong> samples parameter values for a
+batch of <code>n_jobs</code> trials using the configured sampler.</li>
+<li>Parameter sets are serialised and dispatched to <strong>PSOCK worker
+processes</strong> via the <code>parallel</code> package.</li>
+<li>Workers evaluate the objective function and return objective
+values.</li>
+<li>The main process records all results to storage and repeats until
+<code>n_trials</code> are exhausted.</li>
+</ol>
+<p>Because all storage writes happen in the main process, parallel
+execution is safe with both <code>InMemoryStorage</code> and
+<code>SqliteStorage</code> without any additional configuration.</p>
+</div>
+<div class="section level3">
+<h3 id="when-parallel-helps">When parallel helps<a class="anchor" aria-label="anchor" href="#when-parallel-helps"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Scenario</th>
+<th>Recommendation</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Objective takes &lt; 0.5 s</td>
+<td>
+<code>n_jobs = 1</code> — PSOCK startup cost exceeds savings</td>
+</tr>
+<tr class="even">
+<td>Objective takes 1–10 s</td>
+<td>
+<code>n_jobs = 2</code> to <code>n_jobs = 4</code> offers meaningful
+speedup</td>
+</tr>
+<tr class="odd">
+<td>Objective takes &gt; 30 s</td>
+<td>Use all available cores:
+<code>n_jobs = parallel::detectCores()</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Note that results will differ from a sequential run with the same
+seed, because the order in which parallel trials complete is
+non-deterministic.</p>
 <hr>
 </div>
 </div>
 <div class="section level2">
 <h2 id="visualisation">Visualisation<a class="anchor" aria-label="anchor" href="#visualisation"></a>
 </h2>
-<p><code>roptuna</code> implements <code>autoplot.Study</code> with
-three plot types. All three accept the <code>Study</code> object
-returned by <code><a href="../reference/create_study.html">create_study()</a></code>.</p>
+<p><code>roptuna</code> implements <code>autoplot.Study</code> with four
+plot types. All accept the <code>Study</code> object returned by
+<code><a href="../reference/create_study.html">create_study()</a></code>.</p>
 <div class="section level3">
 <h3 id="setup-a-multi-parameter-study">Setup: a multi-parameter study<a class="anchor" aria-label="anchor" href="#setup-a-multi-parameter-study"></a>
 </h3>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">study_viz</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span><span class="st">"minimize"</span>, sampler <span class="op">=</span> <span class="fu"><a href="../reference/tpe_sampler.html">tpe_sampler</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">study_viz</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">lr</span>      <span class="op">&lt;-</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"lr"</span>,      <span class="fl">1e-4</span>, <span class="fl">1.0</span>, log <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -700,7 +1064,7 @@ returned by <code><a href="../reference/create_study.html">create_study()</a></c
 <div class="section level3">
 <h3 id="optimization-history">Optimization history<a class="anchor" aria-label="anchor" href="#optimization-history"></a>
 </h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">study_viz</span>, type <span class="op">=</span> <span class="st">"history"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>plot.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>face <span class="op">=</span> <span class="st">"bold"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -714,7 +1078,7 @@ well-explored.</p>
 <div class="section level3">
 <h3 id="parallel-coordinates">Parallel coordinates<a class="anchor" aria-label="anchor" href="#parallel-coordinates"></a>
 </h3>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">study_viz</span>, type <span class="op">=</span> <span class="st">"parallel_coordinate"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>plot.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>face <span class="op">=</span> <span class="st">"bold"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -729,7 +1093,7 @@ miss.</p>
 <div class="section level3">
 <h3 id="parameter-importance">Parameter importance<a class="anchor" aria-label="anchor" href="#parameter-importance"></a>
 </h3>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">study_viz</span>, type <span class="op">=</span> <span class="st">"param_importance"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>plot.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>face <span class="op">=</span> <span class="st">"bold"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -739,17 +1103,31 @@ miss.</p>
 importance scores. Parameters with near-zero importance can often be
 fixed at their default values in subsequent rounds, effectively reducing
 the search space and making each remaining trial more informative.</p>
+</div>
+<div class="section level3">
+<h3 id="pareto-front-multi-objective">Pareto front (multi-objective)<a class="anchor" aria-label="anchor" href="#pareto-front-multi-objective"></a>
+</h3>
+<p>For multi-objective studies, <code>type = "pareto_front"</code> plots
+all trials in objective-value space, colouring Pareto-optimal trials in
+blue and dominated trials in grey. See the <a href="#multi-objective-optimization">Multi-Objective Optimization</a>
+section for a worked example.</p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">study_mo</span>, type <span class="op">=</span> <span class="st">"pareto_front"</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
 </div>
 <div class="section level2">
-<h2 id="persistent-studies-with-sqlite">Persistent Studies with SQLite<a class="anchor" aria-label="anchor" href="#persistent-studies-with-sqlite"></a>
+<h2 id="persistent-studies">Persistent Studies<a class="anchor" aria-label="anchor" href="#persistent-studies"></a>
 </h2>
-<p>By default, <code>roptuna</code> stores trial results in memory and
-they are lost when the R session ends. SQLite persistence provides a
-durable, queryable record that survives session restarts and can be
-shared across machines.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<p><code>roptuna</code> offers two persistence backends. By default,
+trial results are stored in memory and are lost when the R session
+ends.</p>
+<div class="section level3">
+<h3 id="sqlite-storage">SQLite storage<a class="anchor" aria-label="anchor" href="#sqlite-storage"></a>
+</h3>
+<p>SQLite persistence provides a durable, queryable record that survives
+session restarts and can be shared across machines.</p>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tmp_db</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".sqlite"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># First session: run 20 trials</span></span>
@@ -785,7 +1163,78 @@ by name in the database rather than creating a fresh one. All prior
 trials are immediately available through <code>study$trials</code>, and
 the new sampler uses them to inform its subsequent suggestions — the
 optimisation continues where the previous session left off.</p>
+</div>
+<div class="section level3">
+<h3 id="journal-storage">Journal storage<a class="anchor" aria-label="anchor" href="#journal-storage"></a>
+</h3>
+<p><code><a href="../reference/journal_storage.html">journal_storage()</a></code> is a lightweight alternative that
+appends each operation to a newline-delimited JSON file
+(<code>.jsonl</code>). It requires no database engine and produces a
+human-readable log that can be inspected with any text editor. On
+startup, <code>roptuna</code> replays the log to reconstruct the study
+state in memory.</p>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tmp_jl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".jsonl"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># First session: run 20 trials</span></span>
+<span><span class="va">study_j1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span></span>
+<span>  <span class="st">"minimize"</span>,</span>
+<span>  sampler    <span class="op">=</span> <span class="fu"><a href="../reference/tpe_sampler.html">tpe_sampler</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">11</span><span class="op">)</span>,</span>
+<span>  storage    <span class="op">=</span> <span class="fu"><a href="../reference/journal_storage.html">journal_storage</a></span><span class="op">(</span><span class="va">tmp_jl</span><span class="op">)</span>,</span>
+<span>  study_name <span class="op">=</span> <span class="st">"journal-demo"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">study_j1</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"x"</span>, <span class="op">-</span><span class="fl">5</span>, <span class="fl">5</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span>,</span>
+<span>                  n_trials <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Session 1 best:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">study_j1</span><span class="op">$</span><span class="va">best_value</span>, <span class="fl">5</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Session 1 best: 0.01125</span></span>
+<span></span>
+<span><span class="co"># Second session: reload by replaying the log</span></span>
+<span><span class="va">study_j2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span></span>
+<span>  <span class="st">"minimize"</span>,</span>
+<span>  sampler        <span class="op">=</span> <span class="fu"><a href="../reference/tpe_sampler.html">tpe_sampler</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">22</span><span class="op">)</span>,</span>
+<span>  storage        <span class="op">=</span> <span class="fu"><a href="../reference/journal_storage.html">journal_storage</a></span><span class="op">(</span><span class="va">tmp_jl</span><span class="op">)</span>,</span>
+<span>  study_name     <span class="op">=</span> <span class="st">"journal-demo"</span>,</span>
+<span>  load_if_exists <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">study_j2</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_float</span><span class="op">(</span><span class="st">"x"</span>, <span class="op">-</span><span class="fl">5</span>, <span class="fl">5</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span>,</span>
+<span>                  n_trials <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Session 2 total trials:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">study_j2</span><span class="op">$</span><span class="va">trials</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Session 2 total trials: 40</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Overall best:          "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">study_j2</span><span class="op">$</span><span class="va">best_value</span>, <span class="fl">6</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Overall best:           0.00037</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">tmp_jl</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Backend</th>
+<th>Function</th>
+<th>Best for</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><strong>InMemory</strong></td>
+<td><em>(default)</em></td>
+<td>Single-session experiments; fastest</td>
+</tr>
+<tr class="even">
+<td><strong>SQLite</strong></td>
+<td><code>sqlite_storage(path)</code></td>
+<td>Multi-session; resumable; full SQL query access</td>
+</tr>
+<tr class="odd">
+<td><strong>Journal</strong></td>
+<td><code>journal_storage(path)</code></td>
+<td>Lightweight persistence; human-readable log; no SQL required</td>
+</tr>
+</tbody>
+</table>
 <hr>
+</div>
 </div>
 <div class="section level2">
 <h2 id="a-realistic-example-tuning-a-decision-tree-on-iris">A Realistic Example: Tuning a Decision Tree on Iris<a class="anchor" aria-label="anchor" href="#a-realistic-example-tuning-a-decision-tree-on-iris"></a>
@@ -794,7 +1243,7 @@ optimisation continues where the previous session left off.</p>
 a three-hyperparameter search including a log-scale parameter, 5-fold
 cross-validation as the objective, and all three plot types applied to
 the results.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">iris_objective</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="op">{</span></span>
@@ -828,19 +1277,19 @@ the results.</p>
 <span><span class="co">#&gt;  $ minsplit: int 8</span></span>
 <span><span class="co">#&gt;  $ maxdepth: int 5</span></span>
 <span><span class="co">#&gt;  $ cp      : num 0.00254</span></span></code></pre></div>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">study_iris</span>, type <span class="op">=</span> <span class="st">"history"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>subtitle <span class="op">=</span> <span class="st">"iris CART: 5-fold CV error over 60 trials"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>plot.title    <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>face <span class="op">=</span> <span class="st">"bold"</span><span class="op">)</span>,</span>
 <span>        plot.subtitle <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>colour <span class="op">=</span> <span class="st">"grey40"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="user-guide_files/figure-html/rpart-history-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">study_iris</span>, type <span class="op">=</span> <span class="st">"parallel_coordinate"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>plot.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>face <span class="op">=</span> <span class="st">"bold"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="user-guide_files/figure-html/rpart-parallel-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">study_iris</span>, type <span class="op">=</span> <span class="st">"param_importance"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>plot.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>face <span class="op">=</span> <span class="st">"bold"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -863,7 +1312,7 @@ infrastructure.</p>
 <div class="section level3">
 <h3 id="tidymodels">tidymodels<a class="anchor" aria-label="anchor" href="#tidymodels"></a>
 </h3>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tune.tidymodels.org/" class="external-link">tune</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tidymodels/parsnip" class="external-link">parsnip</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rsample.tidymodels.org" class="external-link">rsample</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tidymodels/workflows" class="external-link">workflows</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dt_spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://parsnip.tidymodels.org/reference/decision_tree.html" class="external-link">decision_tree</a></span><span class="op">(</span></span>
@@ -886,7 +1335,7 @@ infrastructure.</p>
 <div class="section level3">
 <h3 id="mlr3">mlr3<a class="anchor" aria-label="anchor" href="#mlr3"></a>
 </h3>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mlr3.mlr-org.com" class="external-link">mlr3</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mlr3tuning.mlr-org.com" class="external-link">mlr3tuning</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://paradox.mlr-org.com" class="external-link">paradox</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">task</span>    <span class="op">&lt;-</span> <span class="fu"><a href="https://mlr3.mlr-org.com/reference/mlr_sugar.html" class="external-link">tsk</a></span><span class="op">(</span><span class="st">"iris"</span><span class="op">)</span></span>
@@ -938,7 +1387,7 @@ sufficient. For 10 or more parameters, consider
 <p><code>roptuna</code>’s define-by-run design handles conditional
 parameters naturally — only call <code>suggest_*()</code> for parameters
 that are active given earlier choices.</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">study_cond</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span><span class="st">"minimize"</span>, sampler <span class="op">=</span> <span class="fu"><a href="../reference/tpe_sampler.html">tpe_sampler</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">42</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">study_cond</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">model</span> <span class="op">&lt;-</span> <span class="va">trial</span><span class="op">$</span><span class="fu">suggest_categorical</span><span class="op">(</span><span class="st">"model"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"linear"</span>, <span class="st">"tree"</span><span class="op">)</span><span class="op">)</span></span>
@@ -970,7 +1419,7 @@ conditional spaces and requires no special handling.</p>
 an out-of-memory error on an extreme hyperparameter combination — use
 the <code>catch</code> argument to absorb specific error classes rather
 than aborting the study:</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">study_robust</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_study.html">create_study</a></span><span class="op">(</span><span class="st">"minimize"</span><span class="op">)</span></span>
 <span><span class="va">study_robust</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span></span>
 <span>  <span class="kw">function</span><span class="op">(</span><span class="va">trial</span><span class="op">)</span> <span class="op">{</span></span>
@@ -998,7 +1447,7 @@ search space is problematic.</p>
 <p>For production HPO where wall-clock time matters more than a fixed
 trial count, use <code>timeout</code> (seconds) instead of or in
 addition to <code>n_trials</code>:</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">study</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span><span class="va">objective</span>, n_trials <span class="op">=</span> <span class="fl">1000L</span>, timeout <span class="op">=</span> <span class="fl">3600</span><span class="op">)</span>  <span class="co"># stop after 1 hour</span></span></code></pre></div>
 <p>The loop stops at the end of the first trial that completes after the
 timeout — no trial is interrupted mid-evaluation.</p>
@@ -1010,24 +1459,24 @@ timeout — no trial is interrupted mid-evaluation.</p>
 </h2>
 <p>If you use <code>roptuna</code> in published research, please cite
 both the package and the Optuna paper:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode bibtex"><code class="sourceCode bibtex"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="co">@software{Venkitasubramanian2026roptuna,</span></span>
-<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a><span class="co">  author = {Venkitasubramanian, Kailas},</span></span>
-<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a><span class="co">  title  = {{roptuna}: Hyperparameter Optimization Using the {Optuna} Framework},</span></span>
-<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a><span class="co">  year   = {2026},</span></span>
-<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a><span class="co">  url    = {https://github.com/kvenkita/roptuna},</span></span>
-<span id="cb27-6"><a href="#cb27-6" tabindex="-1"></a><span class="co">  note   = {R package version 0.1.0}</span></span>
-<span id="cb27-7"><a href="#cb27-7" tabindex="-1"></a><span class="co">}</span></span>
-<span id="cb27-8"><a href="#cb27-8" tabindex="-1"></a></span>
-<span id="cb27-9"><a href="#cb27-9" tabindex="-1"></a><span class="va">@inproceedings</span>{<span class="ot">Akiba2019optuna</span>,</span>
-<span id="cb27-10"><a href="#cb27-10" tabindex="-1"></a>  <span class="dt">author</span>    = {Akiba, Takuya and Sano, Shotaro and Yanase, Toshihiko and</span>
-<span id="cb27-11"><a href="#cb27-11" tabindex="-1"></a>               Ohta, Takeru and Koyama, Masanori},</span>
-<span id="cb27-12"><a href="#cb27-12" tabindex="-1"></a>  <span class="dt">title</span>     = {Optuna: A Next-generation Hyperparameter Optimization Framework},</span>
-<span id="cb27-13"><a href="#cb27-13" tabindex="-1"></a>  <span class="dt">booktitle</span> = {Proceedings of the 25th {ACM} {SIGKDD} International Conference</span>
-<span id="cb27-14"><a href="#cb27-14" tabindex="-1"></a>               on Knowledge Discovery and Data Mining},</span>
-<span id="cb27-15"><a href="#cb27-15" tabindex="-1"></a>  <span class="dt">year</span>      = {2019},</span>
-<span id="cb27-16"><a href="#cb27-16" tabindex="-1"></a>  <span class="dt">doi</span>       = {10.1145/3292500.3330701}</span>
-<span id="cb27-17"><a href="#cb27-17" tabindex="-1"></a>}</span></code></pre></div>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="sourceCode bibtex"><code class="sourceCode bibtex"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a><span class="co">@software{Venkitasubramanian2026roptuna,</span></span>
+<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a><span class="co">  author = {Venkitasubramanian, Kailas},</span></span>
+<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a><span class="co">  title  = {{roptuna}: Hyperparameter Optimization Using the {Optuna} Framework},</span></span>
+<span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a><span class="co">  year   = {2026},</span></span>
+<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a><span class="co">  url    = {https://github.com/kvenkita/roptuna},</span></span>
+<span id="cb38-6"><a href="#cb38-6" tabindex="-1"></a><span class="co">  note   = {R package version 0.1.0}</span></span>
+<span id="cb38-7"><a href="#cb38-7" tabindex="-1"></a><span class="co">}</span></span>
+<span id="cb38-8"><a href="#cb38-8" tabindex="-1"></a></span>
+<span id="cb38-9"><a href="#cb38-9" tabindex="-1"></a><span class="va">@inproceedings</span>{<span class="ot">Akiba2019optuna</span>,</span>
+<span id="cb38-10"><a href="#cb38-10" tabindex="-1"></a>  <span class="dt">author</span>    = {Akiba, Takuya and Sano, Shotaro and Yanase, Toshihiko and</span>
+<span id="cb38-11"><a href="#cb38-11" tabindex="-1"></a>               Ohta, Takeru and Koyama, Masanori},</span>
+<span id="cb38-12"><a href="#cb38-12" tabindex="-1"></a>  <span class="dt">title</span>     = {Optuna: A Next-generation Hyperparameter Optimization Framework},</span>
+<span id="cb38-13"><a href="#cb38-13" tabindex="-1"></a>  <span class="dt">booktitle</span> = {Proceedings of the 25th {ACM} {SIGKDD} International Conference</span>
+<span id="cb38-14"><a href="#cb38-14" tabindex="-1"></a>               on Knowledge Discovery and Data Mining},</span>
+<span id="cb38-15"><a href="#cb38-15" tabindex="-1"></a>  <span class="dt">year</span>      = {2019},</span>
+<span id="cb38-16"><a href="#cb38-16" tabindex="-1"></a>  <span class="dt">doi</span>       = {10.1145/3292500.3330701}</span>
+<span id="cb38-17"><a href="#cb38-17" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"roptuna"</span><span class="op">)</span></span></code></pre></div>
 <p><strong>Contact and feedback:</strong> Bug reports and feature
 requests are welcome at <a href="mailto:kailasv@gmail.com">kailasv@gmail.com</a> or via the <a href="https://github.com/kvenkita/roptuna/issues" class="external-link">GitHub issue

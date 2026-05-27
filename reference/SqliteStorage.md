@@ -12,13 +12,23 @@ for the recommended constructor.
 
 - [`SqliteStorage$create_study()`](#method-SqliteStorage-create_study)
 
+- [`SqliteStorage$get_study_directions()`](#method-SqliteStorage-get_study_directions)
+
 - [`SqliteStorage$get_study()`](#method-SqliteStorage-get_study)
+
+- [`SqliteStorage$set_study_user_attr()`](#method-SqliteStorage-set_study_user_attr)
+
+- [`SqliteStorage$get_study_user_attrs()`](#method-SqliteStorage-get_study_user_attrs)
+
+- [`SqliteStorage$find_study()`](#method-SqliteStorage-find_study)
 
 - [`SqliteStorage$create_trial()`](#method-SqliteStorage-create_trial)
 
 - [`SqliteStorage$set_trial_state()`](#method-SqliteStorage-set_trial_state)
 
 - [`SqliteStorage$set_trial_param()`](#method-SqliteStorage-set_trial_param)
+
+- [`SqliteStorage$set_trial_values()`](#method-SqliteStorage-set_trial_values)
 
 - [`SqliteStorage$set_trial_intermediate_value()`](#method-SqliteStorage-set_trial_intermediate_value)
 
@@ -44,7 +54,15 @@ for the recommended constructor.
 
 #### Usage
 
-    SqliteStorage$create_study(study_name, direction)
+    SqliteStorage$create_study(study_name, direction, directions = NULL)
+
+------------------------------------------------------------------------
+
+### Method `get_study_directions()`
+
+#### Usage
+
+    SqliteStorage$get_study_directions(study_id)
 
 ------------------------------------------------------------------------
 
@@ -53,6 +71,30 @@ for the recommended constructor.
 #### Usage
 
     SqliteStorage$get_study(study_id)
+
+------------------------------------------------------------------------
+
+### Method `set_study_user_attr()`
+
+#### Usage
+
+    SqliteStorage$set_study_user_attr(study_id, key, value)
+
+------------------------------------------------------------------------
+
+### Method `get_study_user_attrs()`
+
+#### Usage
+
+    SqliteStorage$get_study_user_attrs(study_id)
+
+------------------------------------------------------------------------
+
+### Method `find_study()`
+
+#### Usage
+
+    SqliteStorage$find_study(study_name)
 
 ------------------------------------------------------------------------
 
@@ -89,6 +131,14 @@ for the recommended constructor.
       distribution,
       value
     )
+
+------------------------------------------------------------------------
+
+### Method `set_trial_values()`
+
+#### Usage
+
+    SqliteStorage$set_trial_values(study_id, trial_id, values)
 
 ------------------------------------------------------------------------
 

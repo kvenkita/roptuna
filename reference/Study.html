@@ -58,12 +58,28 @@ Study R6 class for hyperparameter optimization"></head><body>
 
 <ul><li><p><a href="#method-Study-new"><code>Study$new()</code></a></p></li>
 <li><p><a href="#method-Study-optimize"><code>Study$optimize()</code></a></p></li>
+<li><p><a href="#method-Study-ask"><code>Study$ask()</code></a></p></li>
+<li><p><a href="#method-Study-tell"><code>Study$tell()</code></a></p></li>
+<li><p><a href="#method-Study-stop"><code>Study$stop()</code></a></p></li>
+<li><p><a href="#method-Study-set_user_attr"><code>Study$set_user_attr()</code></a></p></li>
+<li><p><a href="#method-Study-enqueue_trial"><code>Study$enqueue_trial()</code></a></p></li>
+<li><p><a href="#method-Study-add_trial"><code>Study$add_trial()</code></a></p></li>
+<li><p><a href="#method-Study-add_trials"><code>Study$add_trials()</code></a></p></li>
+<li><p><a href="#method-Study-trials_dataframe"><code>Study$trials_dataframe()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-Study-new"></a><div class="section">
 <h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
 
 <div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/Study.html">Study</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">study_id</span>, <span class="va">study_name</span>, <span class="va">direction</span>, <span class="va">sampler</span>, <span class="va">pruner</span>, <span class="va">storage</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/Study.html">Study</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>  <span class="va">study_id</span>,</span>
+<span>  <span class="va">study_name</span>,</span>
+<span>  <span class="va">direction</span>,</span>
+<span>  <span class="va">sampler</span>,</span>
+<span>  <span class="va">pruner</span>,</span>
+<span>  <span class="va">storage</span>,</span>
+<span>  directions <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
@@ -71,7 +87,157 @@ Study R6 class for hyperparameter optimization"></head><body>
 <h3 id="method-optimize-">Method <code><a href="https://rdrr.io/r/stats/optimize.html" class="external-link">optimize()</a></code><a class="anchor" aria-label="anchor" href="#method-optimize-"></a></h3>
 <p>Run the objective function for n_trials iterations.</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Study</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span><span class="va">func</span>, n_trials <span class="op">=</span> <span class="fl">100</span>, timeout <span class="op">=</span> <span class="cn">NULL</span>, catch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Study</span><span class="op">$</span><span class="fu">optimize</span><span class="op">(</span></span>
+<span>  <span class="va">func</span>,</span>
+<span>  n_trials <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  timeout <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  catch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  callbacks <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n_jobs <span class="op">=</span> <span class="fl">1L</span></span>
+<span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>func</code></dt>
+<dd><p>Objective function taking a Trial and returning a numeric scalar.</p></dd>
+
+
+<dt><code>n_trials</code></dt>
+<dd><p>Number of trials to run.</p></dd>
+
+
+<dt><code>timeout</code></dt>
+<dd><p>Wall-clock timeout in seconds (NULL = no limit).</p></dd>
+
+
+<dt><code>catch</code></dt>
+<dd><p>Character vector of additional condition classes to catch as failed trials.</p></dd>
+
+
+<dt><code>callbacks</code></dt>
+<dd><p>List of functions <code>function(study, trial_snapshot)</code> called after each trial.</p></dd>
+
+
+<dt><code>n_jobs</code></dt>
+<dd><p>Number of parallel workers (&gt;1 requires <code>parallel</code> package).</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
+</div><p></p><hr><a id="method-Study-ask"></a><div class="section">
+<h3 id="method-ask-">Method <code>ask()</code><a class="anchor" aria-label="anchor" href="#method-ask-"></a></h3>
+<p>Create a trial without evaluating the objective (decoupled API).
+Call tell() with the returned trial to record the result.</p><div class="section">
+<h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Study</span><span class="op">$</span><span class="fu">ask</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="returns">Returns<a class="anchor" aria-label="anchor" href="#returns"></a></h4>
+<p>A <code>Trial</code> R6 object ready for parameter suggestion.</p>
+</div>
+
+</div><p></p><hr><a id="method-Study-tell"></a><div class="section">
+<h3 id="method-tell-">Method <code>tell()</code><a class="anchor" aria-label="anchor" href="#method-tell-"></a></h3>
+<p>Record the result of a trial created by ask().</p><div class="section">
+<h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Study</span><span class="op">$</span><span class="fu">tell</span><span class="op">(</span><span class="va">trial</span>, <span class="va">values</span>, state <span class="op">=</span> <span class="st">"complete"</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-1">Arguments<a class="anchor" aria-label="anchor" href="#arguments-1"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>trial</code></dt>
+<dd><p>A <code>Trial</code> object returned by ask().</p></dd>
+
+
+<dt><code>values</code></dt>
+<dd><p>Numeric scalar or vector (multi-obj), or NULL for failed/pruned.</p></dd>
+
+
+<dt><code>state</code></dt>
+<dd><p>"complete", "failed", or "pruned".</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
+</div><p></p><hr><a id="method-Study-stop"></a><div class="section">
+<h3 id="method-stop-">Method <code><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop()</a></code><a class="anchor" aria-label="anchor" href="#method-stop-"></a></h3>
+<p>Signal the optimize loop to stop after the current trial.</p><div class="section">
+<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Study</span><span class="op">$</span><span class="kw">stop</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+
+</div><p></p><hr><a id="method-Study-set_user_attr"></a><div class="section">
+<h3 id="method-set-user-attr-">Method <code>set_user_attr()</code><a class="anchor" aria-label="anchor" href="#method-set-user-attr-"></a></h3>
+<p>Set a user attribute on the study.</p><div class="section">
+<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Study</span><span class="op">$</span><span class="fu">set_user_attr</span><span class="op">(</span><span class="va">key</span>, <span class="va">value</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+
+</div><p></p><hr><a id="method-Study-enqueue_trial"></a><div class="section">
+<h3 id="method-enqueue-trial-">Method <code>enqueue_trial()</code><a class="anchor" aria-label="anchor" href="#method-enqueue-trial-"></a></h3>
+<p>Queue a trial with fixed parameter values.
+The next call to optimize() will use these values instead of sampling.</p><div class="section">
+<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Study</span><span class="op">$</span><span class="fu">enqueue_trial</span><span class="op">(</span><span class="va">params</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>params</code></dt>
+<dd><p>Named list of parameter name -&gt; value.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
+</div><p></p><hr><a id="method-Study-add_trial"></a><div class="section">
+<h3 id="method-add-trial-">Method <code>add_trial()</code><a class="anchor" aria-label="anchor" href="#method-add-trial-"></a></h3>
+<p>Add a completed (or failed/pruned) trial directly to the study.</p><div class="section">
+<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Study</span><span class="op">$</span><span class="fu">add_trial</span><span class="op">(</span><span class="va">trial_info</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>trial_info</code></dt>
+<dd><p>Named list with: <code>params</code> (named list), <code>value</code> (numeric),
+and optionally <code>state</code> ("complete"), <code>distributions</code> (named list),
+<code>user_attrs</code> (named list), <code>intermediate_values</code> (named numeric).</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
+</div><p></p><hr><a id="method-Study-add_trials"></a><div class="section">
+<h3 id="method-add-trials-">Method <code>add_trials()</code><a class="anchor" aria-label="anchor" href="#method-add-trials-"></a></h3>
+<p>Add multiple trials at once. See <code>add_trial()</code>.</p><div class="section">
+<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Study</span><span class="op">$</span><span class="fu">add_trials</span><span class="op">(</span><span class="va">trial_list</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>trial_list</code></dt>
+<dd><p>List of trial_info lists.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
+</div><p></p><hr><a id="method-Study-trials_dataframe"></a><div class="section">
+<h3 id="method-trials-dataframe-">Method <code>trials_dataframe()</code><a class="anchor" aria-label="anchor" href="#method-trials-dataframe-"></a></h3>
+<p>Return all trials as a data frame with one row per trial.
+Columns: number, value, state, datetime_start, datetime_complete,
+plus <code>params_&lt;name&gt;</code> for every hyperparameter and
+<code>user_attrs_&lt;name&gt;</code> for every user attribute.</p><div class="section">
+<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">Study</span><span class="op">$</span><span class="fu">trials_dataframe</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 
