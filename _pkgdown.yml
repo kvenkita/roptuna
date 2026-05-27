@@ -25,11 +25,33 @@ reference:
   - title: "Study"
     contents: [create_study, Study, Trial]
   - title: "Samplers"
-    contents: [random_sampler, grid_sampler, tpe_sampler]
+    contents:
+      - random_sampler
+      - grid_sampler
+      - tpe_sampler
+      - cmaes_sampler
+      - CmaEsSampler
+      - nsgaii_sampler
+      - NSGAIISampler
   - title: "Pruners"
-    contents: [median_pruner, successive_halving_pruner, stop_prune]
+    contents:
+      - median_pruner
+      - successive_halving_pruner
+      - hyperband_pruner
+      - HyperbandPruner
+      - wilcoxon_pruner
+      - WilcoxonPruner
+      - percentile_pruner
+      - threshold_pruner
+      - patient_pruner
+      - stop_prune
   - title: "Storage"
-    contents: [sqlite_storage, SqliteStorage, InMemoryStorage]
+    contents:
+      - sqlite_storage
+      - SqliteStorage
+      - journal_storage
+      - JournalStorage
+      - InMemoryStorage
   - title: "Distributions"
     contents: [float_distribution, int_distribution, categorical_distribution]
   - title: "Adapters"
