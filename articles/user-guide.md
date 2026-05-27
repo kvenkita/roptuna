@@ -773,7 +773,7 @@ study_par$optimize(
 cat("Completed trials:", study_par$n_trials, "\n")
 #> Completed trials: 20
 cat("Best value:      ", round(study_par$best_value, 4), "\n")
-#> Best value:       1.6325
+#> Best value:       1.2859
 ```
 
 ### How it works
